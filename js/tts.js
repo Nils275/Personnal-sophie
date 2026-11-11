@@ -48,7 +48,7 @@ export const TTS = {
   const isLocal = /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(configured);
 
   return !configured || isLocal
-    ? 'https://personnalsoph1e-5p9qvusmk-pitlane5.vercel.app/api/tts'
+    ? '/api/tts'
     : configured;
 },
 
