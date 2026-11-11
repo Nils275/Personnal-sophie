@@ -43,9 +43,18 @@ export const TTS = {
       || french.find(v => /natural|premium|enhanced/i.test(v.name))
       || french[0] || null;
   },
-  canUseElevenLabs() {
-    return Boolean(Store.settings.elevenlabsEndpoint) && Date.now() > this.circuitUntil;
-  },
+  endpoint() {
+  const configured = Store.settings.elevenlabsEndpoint || '';
+  const isLocal = /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(configured);
+
+  return !configured || isLocal
+    ? 'https://personnalsoph1e-5p9qvusmk-pitlane5.vercel.app/api/tts'
+    : configured;
+},
+
+canUseElevenLabs() {
+  return Boolean(this.endpoint()) && Date.now() > this.circuitUntil;
+},
   /* Distingue clairement quota, clé invalide et panne réseau. */
   classify(error, status = 0) {
     if (status === 401 || status === 403) return { kind: 'auth', minutes: 30, message: 'Clé ElevenLabs refusée par le proxy (authentification).' };
@@ -54,8 +63,7 @@ export const TTS = {
     return { kind: 'network', minutes: 2, message: 'Réseau indisponible vers le proxy vocal.' };
   },
   async speakElevenLabs(text) {
-    const endpoint = Store.settings.elevenlabsEndpoint;
-    const response = await fetch(endpoint, {
+const endpoint = this.endpoint();    const response = await fetch(endpoint, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, voiceId: Store.settings.elevenlabsVoiceId || ELEVENLABS_VOICE_ID, model: 'eleven_multilingual_v2' })
     });
