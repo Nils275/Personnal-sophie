@@ -8,8 +8,7 @@ import { Sophie } from './sophie.js';
 import { setSophieState } from './sophie-avatar.js';
 
 const VOSK_SCRIPT = 'https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js';
-const VOSK_MODEL = './models/vosk-model-small-fr-0.22.tar.gz';
-
+const VOSK_MODEL = 'https://huggingface.co/Andesprit/vosk-small/resolve/main/vosk-model-small-fr-0.22.tar.gz';
 export const Voice = {
   recognition: null, listening: false, processing: false, speaking: false, state: 'idle',
   navigate: null, refresh: null, openEditor: null, announcedKeys: new Set(),
