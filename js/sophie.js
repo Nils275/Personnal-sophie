@@ -231,7 +231,49 @@ export const Sophie = {
         if (section && section !== 'assistant' && this.navigate) this.navigate(section); else this.refresh?.();
         return response;
       }
-      if (/qui es tu|tu es qui|presente toi/.test(text)) {
+      if (/(meteo|temps qu il fait|temperature|va t il pleuvoir|pleut il)/.test(text)) {
+        if (navigator.onLine) await Weather.refresh();
+        const daily = Store.settings.weather.daily;
+        const targetDate = /demain/.test(text) ? Utils.day(1) : Utils.iso();
+        const index = daily?.time?.indexOf(targetDate) ?? -1;
+        if (index >= 0) {
+          const code = daily.weather_code?.[index];
+          const condition = Weather.codes[code] || 'conditions variables';
+          const min = daily.temperature_2m_min?.[index];
+          const max = daily.temperature_2m_max?.[index];
+          const rain = daily.precipitation_probability_max?.[index];
+          response = `Pour ${targetDate === Utils.iso() ? 'aujourd’hui' : 'demain'} : ${condition.toLowerCase()}, ${min ?? '—'} degrés au minimum et ${max ?? '—'} au maximum${rain != null ? `, avec ${rain} % de risque de précipitations` : ''}.`;
+        } else {
+          const current = Store.settings.weather.data;
+          response = current
+            ? `Je n’ai pas la prévision détaillée pour cette date. Actuellement, il fait ${Math.round(current.temperature_2m)} degrés, ${Weather.codes[current.weather_code] || 'conditions variables'}.`
+            : 'Je n’ai pas encore de données météo. Configure ta position dans les réglages météo puis réessaie.';
+        }
+        section = 'dashboard';
+      } else if (/(agenda|rendez vous|planning|qu est ce que j ai|evenements)/.test(text) && /(demain|aujourd hui|aujourd'hui|cette semaine|semaine|programme|prevu|prevoit|agenda|rendez vous|planning)/.test(text)) {
+        const start = /demain/.test(text) ? Utils.day(1) : Utils.iso();
+        const end = /semaine/.test(text) ? Utils.day(7) : start;
+        const events = Repo.list('events').filter(event => event.date >= start && event.date <= end)
+          .sort((a, b) => a.date.localeCompare(b.date) || String(a.start || '').localeCompare(String(b.start || '')));
+        response = events.length
+          ? (start === end ? `Ton agenda ${start === Utils.iso() ? 'aujourd’hui' : 'demain'} : ` : 'Voici ton agenda de la période : ') +
+            events.slice(0, 10).map(event => `${event.title}, le ${Utils.formatDate(event.date)} à ${event.start || 'heure non définie'}`).join('. ') + '.'
+          : `Tu n’as aucun rendez-vous enregistré ${start === end ? (start === Utils.iso() ? 'aujourd’hui' : 'demain') : 'sur les sept prochains jours'}.`;
+        section = 'calendar';
+      } else if (/(tache|taches|retard|en retard)/.test(text) && /(retard|en retard|mes taches|liste|quelles|combien|a faire|à faire)/.test(text)) {
+        const today = Utils.iso();
+        const open = Repo.list('tasks').filter(task => task.status !== 'done');
+        const late = open.filter(task => task.due && task.due < today);
+        const dueToday = open.filter(task => task.due === today);
+        response = `Tu as ${open.length} tâche(s) en cours, dont ${late.length} en retard et ${dueToday.length} à traiter aujourd’hui.${late.length ? ` En priorité : ${late.slice(0, 3).map(task => task.title).join(', ')}.` : ''}`;
+        section = 'projects';
+      } else if (/projets?/.test(text) && /(mes|liste|combien|en cours|actif|avancement|etat|état|resume|résumé)/.test(text)) {
+        const projects = Selectors.projects();
+        response = projects.active.length
+          ? `Tu as ${projects.active.length} projet(s) actif(s) : ${projects.active.slice(0, 8).map(project => `${project.name} à ${project.progress ?? 0} %`).join(', ')}.`
+          : 'Tu n’as aucun projet actif enregistré pour le moment.';
+        section = 'projects';
+      } else if (/qui es tu|tu es qui|presente toi/.test(text)) {
         response = `Je suis ${Store.settings.assistantName || 'Sophie'}, ton copilote personnel dans PERSONAL OS. Je consulte tes modules, je mémorise ce que tu me confies et j’exécute les actions autorisées.`;
       } else if (/rappel/.test(text) && /(mes rappels|liste des rappels|quels rappels)/.test(text)) {
         const stats = Reminders.stats();
