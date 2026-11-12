@@ -3,7 +3,7 @@
    Ainsi, toute correction est prise en compte dès le rechargement,
    même si une ancienne version a été mise en cache. */
 
-const CACHE = 'personal-os-shell-v3.10.0';
+const CACHE = 'personal-os-shell-v3.11.0';
 const SHELL = [
   './', './index.html', './style.css', './theme-os.css', './maison-hub.css', './script.js', './manifest.json', './icon.svg',
   './js/layout.js', './js/core.js', './js/ui.js', './js/view-state.js', './js/views.js',
