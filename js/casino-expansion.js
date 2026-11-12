@@ -245,6 +245,11 @@
     const content=$('#casino-content');if(content)new MutationObserver(()=>{if(activeExtra==='lobby')addLobbyCards();}).observe(content,{childList:true});
     addLobbyCards();
   }
+  if(window.PO_CASINO&&!window.PO_CASINO.__expanded){
+    const originalOpen=window.PO_CASINO.open.bind(window.PO_CASINO);
+    window.PO_CASINO.open=(tab='lobby')=>{if(tab==='lobby')activeExtra='lobby';const result=originalOpen(tab);if(tab==='lobby')queueMicrotask(addLobbyCards);return result;};
+    window.PO_CASINO.__expanded=true;
+  }
   const observer=new MutationObserver(()=>{const root=$('#po-casino');if(root&&!root.dataset.expansionMounted)mount(root);});
   observer.observe(document.body,{childList:true,subtree:true});
   if($('#po-casino'))mount($('#po-casino'));
