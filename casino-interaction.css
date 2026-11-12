@@ -1,0 +1,43 @@
+
+/* Casino — modes de contrôle souris / voix / hybride */
+#po-casino .casino-control-panel{margin:18px 0 24px;padding:20px 22px;border:1px solid rgba(199,165,91,.25);border-radius:18px;background:linear-gradient(135deg,rgba(28,30,27,.97),rgba(11,16,14,.96));box-shadow:0 18px 42px rgba(0,0,0,.2);color:#f5edda}
+#po-casino .ccp-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+#po-casino .ccp-top h3{margin:5px 0;color:#f4e6c7;font:600 22px Georgia,serif}
+#po-casino .ccp-top p{margin:0;color:#b7b1a3;font-size:13px;max-width:650px}
+#po-casino .ccp-live{white-space:nowrap;color:#a7c5ad;font-size:10px;letter-spacing:1.4px}
+#po-casino .ccp-live i{display:inline-block;width:7px;height:7px;margin-right:7px;border-radius:50%;background:#70c98b;box-shadow:0 0 12px #70c98b}
+#po-casino .ccp-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:17px 0}
+#po-casino .ccp-modes button{display:flex;align-items:center;gap:12px;text-align:left;padding:13px 15px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.035);color:#eee6d7;cursor:pointer;transition:.2s}
+#po-casino .ccp-modes button>b{font-size:25px;color:#d8b96f}
+#po-casino .ccp-modes button strong,#po-casino .ccp-modes button small{display:block}
+#po-casino .ccp-modes button strong{font-size:12px;letter-spacing:1.2px}
+#po-casino .ccp-modes button small{margin-top:3px;color:#aaa394;font-size:11px}
+#po-casino .ccp-modes button.active{border-color:#c9a85e;background:linear-gradient(120deg,rgba(190,151,74,.2),rgba(190,151,74,.06));box-shadow:inset 0 0 0 1px rgba(201,168,94,.14)}
+#po-casino .ccp-voice{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px 16px;border:1px solid rgba(255,255,255,.1);border-radius:13px;background:rgba(0,0,0,.2)}
+#po-casino .ccp-mic{display:flex;align-items:center;gap:12px;min-width:0}
+#po-casino .ccp-mic-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:rgba(201,168,94,.13);font-size:21px}
+#po-casino .ccp-mic strong,#po-casino .ccp-mic small{display:block}
+#po-casino .ccp-mic strong{font-size:13px}
+#po-casino .ccp-mic small{margin-top:4px;color:#aaa394;font-size:11px}
+#po-casino .ccp-mic small[data-state=live]{color:#8fdfa7}
+#po-casino .ccp-mic small[data-state=error]{color:#ff9b91}
+#po-casino .ccp-mic small[data-state=warning]{color:#edc77e}
+#po-casino .ccp-voice-actions{display:flex;gap:8px;flex-wrap:wrap}
+#po-casino .ccp-voice-actions button{white-space:nowrap}
+#po-casino .ccp-help{margin-top:13px;color:#d8d0c0;font-size:12px}
+#po-casino .ccp-help summary{cursor:pointer;color:#d8b96f;font-weight:600;padding:7px 0}
+#po-casino .ccp-command-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:10px}
+#po-casino .ccp-command-grid span{padding:8px 9px;border-radius:8px;background:rgba(255,255,255,.055);color:#c8c0b2;font-size:11px}
+#po-casino .ccp-last{display:flex;align-items:center;gap:12px;margin-top:12px;color:#8f887b;font-size:9px;letter-spacing:1.2px}
+#po-casino .ccp-last strong{color:#eee4d2;font-size:11px;font-weight:500;letter-spacing:0}
+#po-casino[data-control-mode=voice] #casino-content button:not([data-casino-tab]):not([data-casino-extra]){opacity:.68}
+@media(max-width:760px){#po-casino .casino-control-panel{padding:15px}#po-casino .ccp-top{display:block}#po-casino .ccp-live{display:inline-block;margin-top:10px}#po-casino .ccp-modes{grid-template-columns:1fr}#po-casino .ccp-voice{align-items:flex-start;flex-direction:column}#po-casino .ccp-command-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#po-casino .ccp-last{align-items:flex-start;flex-direction:column;gap:4px}}
+
+/* Mode vocal : les actions de jeu passent par la voix ; navigation conservée. */
+#po-casino[data-control-mode=voice] #casino-content button:not([data-casino-tab]):not([data-casino-extra]):not([data-cx=home]){pointer-events:none;opacity:.34;filter:grayscale(.5)}
+#po-casino[data-control-mode=voice] #casino-content input,#po-casino[data-control-mode=voice] #casino-content select,#po-casino[data-control-mode=voice] #casino-content textarea{pointer-events:none;opacity:.5}
+#po-casino .cx-creator-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#po-casino .cx-timer{display:inline-flex;align-items:center;justify-content:center;margin:12px auto;padding:9px 18px;border:1px solid rgba(214,176,94,.4);border-radius:30px;color:#e7c878;font-weight:800;font-variant-numeric:tabular-nums}
+#po-casino .cx-custom-card{gap:10px}
+#po-casino .cx-custom-card>div{min-width:240px;flex:1}
+@media(max-width:760px){#po-casino .cx-creator-grid{grid-template-columns:1fr}}

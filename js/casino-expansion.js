@@ -10,6 +10,7 @@
   let audio = null, audioNodes = [], audioStarted = false, audioActive = false, musicTimer = null, musicStep = 0;
   let activeExtra = 'lobby';
   let extraState = {};
+  let customTimer = null, customSeconds = 0;
 
   const account = () => window.PO_CASINO?.account || {bankroll:1000};
   const transact = (stake, payout, outcome) => {
@@ -167,35 +168,42 @@
   }
   function renderCreator(existing=null){
     const g=existing||{title:'',type:'challenge',min:2,max:6,items:[],points:1};
-    $('#casino-content').innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">ATELIER · MODE CRÉATION</span><h1>Fabrique <em>ta propre table</em></h1><p>Crée un jeu local, définis ses règles et retrouve-le dans ta ludothèque. Pas besoin de modifier le code.</p></div><div class="cx-creator-layout"><form id="cx-create-form" class="cx-panel"><input type="hidden" name="editingId" value="'+esc(existing?.id||'')+'"><label>Nom du jeu<input name="title" maxlength="42" value="'+esc(g.title)+'" placeholder="Ex. Le dernier survivant" required></label><label>Type de partie<select name="type"><option value="challenge" '+(g.type==='challenge'?'selected':'')+'>Défis / gages</option><option value="quiz" '+(g.type==='quiz'?'selected':'')+'>Quiz / questions</option><option value="dice" '+(g.type==='dice'?'selected':'')+'>Dés / hasard</option></select></label><label>Joueurs minimum<select name="min">'+[1,2,3,4].map(n=>'<option '+(g.min===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Joueurs maximum<select name="max">'+[2,3,6,8].map(n=>'<option '+(g.max===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Contenu du jeu<textarea name="items" rows="7" placeholder="Une question ou un défi par ligne. Pour un quiz : question | réponse." required>'+esc(g.items.join('\n'))+'</textarea></label><label>Points pour une réussite<input name="points" type="number" min="1" max="20" value="'+g.points+'"></label><div class="cx-form-actions"><button class="casino-gold-btn" type="submit">'+(existing?'Enregistrer les modifications':'Enregistrer le jeu')+'</button><button class="casino-action" type="button" data-cx="custom-list">Voir ma ludothèque</button></div></form><aside class="cx-creator-preview"><span>APERÇU</span><div class="cx-preview-card"><div class="game-symbol">♛</div><h3>Ton jeu, tes règles.</h3><p>Les joueurs se relaient sur le même écran. Les scores sont enregistrés pendant la partie.</p><small>SAUVEGARDE LOCALE</small></div><p class="casino-fineprint">Les jeux personnalisés sont stockés dans ce navigateur. Exporte-les en JSON pour les transférer.</p></aside></div></section>';
+    $('#casino-content').innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">ATELIER · MODE CRÉATION</span><h1>Fabrique <em>ta propre table</em></h1><p>Configure les règles, le rythme, les joueurs, le score et les épreuves. Chaque jeu est personnalisable.</p></div><div class="cx-creator-layout"><form id="cx-create-form" class="cx-panel"><input type="hidden" name="editingId" value="'+esc(existing?.id||'')+'"><label>Nom du jeu<input name="title" maxlength="42" value="'+esc(g.title)+'" placeholder="Ex. Le dernier survivant" required></label><label>Présentation<textarea name="description" rows="2" maxlength="220" placeholder="Décris l’ambiance et le but du jeu…">'+esc(g.description||'')+'</textarea></label><div class="cx-creator-grid"><label>Type de partie<select name="type"><option value="challenge" '+(g.type==='challenge'?'selected':'')+'>Défis / gages</option><option value="quiz" '+(g.type==='quiz'?'selected':'')+'>Quiz / questions</option><option value="dice" '+(g.type==='dice'?'selected':'')+'>Dés / hasard</option></select></label><label>Difficulté<select name="difficulty"><option value="cool" '+((g.difficulty||'medium')==='cool'?'selected':'')+'>Détente</option><option value="medium" '+((g.difficulty||'medium')==='medium'?'selected':'')+'>Intermédiaire</option><option value="hard" '+(g.difficulty==='hard'?'selected':'')+'>Corsé</option></select></label><label>Joueurs minimum<select name="min">'+[1,2,3,4].map(n=>'<option '+(g.min===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Joueurs maximum<select name="max">'+[2,3,6,8].map(n=>'<option '+(g.max===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Manches par joueur<input name="rounds" type="number" min="1" max="20" value="'+(g.rounds||5)+'"></label><label>Temps par épreuve<select name="timer"><option value="0" '+(!g.timer?'selected':'')+'>Sans limite</option><option value="15" '+(g.timer===15?'selected':'')+'>15 secondes</option><option value="30" '+((g.timer||30)===30?'selected':'')+'>30 secondes</option><option value="60" '+(g.timer===60?'selected':'')+'>1 minute</option></select></label><label>Points par réussite<input name="points" type="number" min="1" max="20" value="'+g.points+'"></label></div><label>Questions / défis / événements<textarea name="items" rows="8" placeholder="Une épreuve par ligne. Pour un quiz : question | réponse attendue." required>'+esc(g.items.join('\n'))+'</textarea><small>Astuce : une ligne = une carte du paquet. Le jeu pioche sans répétition avant de remélanger.</small></label><div class="cx-form-actions"><button class="casino-gold-btn" type="submit">'+(existing?'Enregistrer les modifications':'Créer et enregistrer')+'</button><button class="casino-action" type="button" data-cx="custom-list">Ma ludothèque</button></div></form><aside class="cx-creator-preview"><span>APERÇU DE TA TABLE</span><div class="cx-preview-card"><div class="game-symbol">♛</div><h3>Ton jeu, tes règles.</h3><p>Jusqu’à 8 joueurs, score individuel, manches paramétrables et chronomètre facultatif.</p><small>SAUVEGARDE LOCALE</small></div><p class="casino-fineprint">Les jeux sont conservés dans ce navigateur. Export JSON pour les transférer sur un autre appareil.</p></aside></div></section>';
   }
   function saveCustom(form){
     const data=new FormData(form),title=String(data.get('title')||'').trim(),items=String(data.get('items')||'').split('\n').map(x=>x.trim()).filter(Boolean);
     const min=Number(data.get('min')),max=Number(data.get('max'));
     if(!title||items.length<1||max<min){say('Il manque un nom, un contenu ou la configuration des joueurs.');return;}
     const editingId=String(data.get('editingId')||'');
-    const game={id:editingId||'cg-'+Date.now(),title,type:String(data.get('type')),min,max,items,points:Math.max(1,Math.min(20,Number(data.get('points')||1))),createdAt:new Date().toISOString()};
+    const game={id:editingId||'cg-'+Date.now(),title,description:String(data.get('description')||'').trim(),type:String(data.get('type')),difficulty:String(data.get('difficulty')||'medium'),min,max,rounds:Math.max(1,Math.min(20,Number(data.get('rounds')||5))),timer:Math.max(0,Number(data.get('timer')||0)),items,points:Math.max(1,Math.min(20,Number(data.get('points')||1))),createdAt:new Date().toISOString()};
     if(editingId){const i=customGames.findIndex(g=>g.id===editingId);if(i>=0)customGames[i]=game;else customGames.unshift(game);}else customGames.unshift(game);
     persistCustom();say('Ton jeu '+title+' est enregistré. Il est disponible dans ta ludothèque.');renderCustomList();
   }
   function persistCustom(){try{localStorage.setItem(CUSTOM_KEY,JSON.stringify(customGames));}catch{say('Stockage local saturé : impossible de sauvegarder ce jeu.');}}
   function renderCustomList(){
     const content=$('#casino-content');if(!content)return;
-    content.innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">MA LUDOTHÈQUE</span><h1>Jeux <em>personnalisés</em></h1><p>Des règles maison, des défis et des questions créés par les joueurs.</p></div><div class="cx-custom-list">'+(customGames.length?customGames.map(g=>'<article class="cx-custom-card"><div><small>'+esc(g.type.toUpperCase())+' · '+g.items.length+' ÉPREUVE(S)</small><h3>'+esc(g.title)+'</h3><p>'+g.min+' à '+g.max+' joueurs · '+g.points+' point(s) par réussite</p></div><button class="casino-gold-btn" data-cx-play="'+esc(g.id)+'">Jouer</button><button class="casino-action" data-cx-export="'+esc(g.id)+'">Exporter</button><button class="casino-action" data-cx-delete="'+esc(g.id)+'">Supprimer</button></article>').join(''):'<div class="cx-panel"><h3>Aucun jeu enregistré</h3><p>Crée ton premier jeu pour remplir cette salle.</p></div>')+'</div><div class="cx-form-actions"><button class="casino-gold-btn" data-cx="creator">Créer un jeu</button><button class="casino-action" data-cx="import">Importer un jeu JSON</button><button class="casino-action" data-cx="home">Retour au salon</button><input type="file" id="cx-import-file" accept=".json,application/json" hidden></div></section>';
+    content.innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">MA LUDOTHÈQUE</span><h1>Jeux <em>personnalisés</em></h1><p>Des règles maison, des défis et des questions créés par les joueurs.</p></div><div class="cx-custom-list">'+(customGames.length?customGames.map(g=>'<article class="cx-custom-card"><div><small>'+esc(g.type.toUpperCase())+' · '+esc(({cool:"DÉTENTE",medium:"INTERMÉDIAIRE",hard:"CORSÉ"})[g.difficulty||"medium"])+' · '+g.items.length+' CARTES</small><h3>'+esc(g.title)+'</h3><p>'+esc(g.description||'')+'</p><p>'+g.min+' à '+g.max+' joueurs · '+(g.rounds||5)+' manches · '+(g.timer?g.timer+" s/épreuve":"sans chrono")+' · '+g.points+' point(s)</p></div><button class="casino-gold-btn" data-cx-play="'+esc(g.id)+'">Jouer</button><button class="casino-action" data-cx-edit="'+esc(g.id)+'">Modifier</button><button class="casino-action" data-cx-duplicate="'+esc(g.id)+'">Dupliquer</button><button class="casino-action" data-cx-export="'+esc(g.id)+'">Exporter</button><button class="casino-action" data-cx-delete="'+esc(g.id)+'">Supprimer</button></article>').join(''):'<div class="cx-panel"><h3>Aucun jeu enregistré</h3><p>Crée ton premier jeu pour remplir cette salle.</p></div>')+'</div><div class="cx-form-actions"><button class="casino-gold-btn" data-cx="creator">Créer un jeu</button><button class="casino-action" data-cx="import">Importer un jeu JSON</button><button class="casino-action" data-cx="home">Retour au salon</button><input type="file" id="cx-import-file" accept=".json,application/json" hidden></div></section>';
   }
   function playCustom(id){
     const game=customGames.find(g=>g.id===id);if(!game)return;
-    const names=playerNames(prompt('Noms des joueurs séparés par des virgules :','Joueur 1, Joueur 2'),game.min,game.max);
-    if(names.length<game.min||names.length>game.max)return;
-    extraState={kind:'custom',game,names,turn:0,scores:Object.fromEntries(names.map(n=>[n,0])),used:[],current:null,round:0};
+    $('#casino-content').innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">INSTALLATION DE LA TABLE</span><h1>'+esc(game.title)+'</h1><p>'+esc(game.description||'Configure les joueurs avant de commencer.')+'</p></div><form id="cx-custom-start-form" class="cx-panel"><label>Joueurs (séparés par des virgules)<input id="cx-custom-players" name="players" value="Joueur 1, Joueur 2" maxlength="180" required></label><small>Entre '+game.min+' à '+game.max+' noms. Les joueurs se relaient sur cet écran.</small><button class="casino-gold-btn" type="submit">Installer la partie</button></form><button class="casino-action" data-cx="custom-list">Retour à la ludothèque</button></section>';
+    $('#cx-custom-start-form').dataset.gameId=game.id;
+  }
+  function startCustomFromForm(form){
+    const game=customGames.find(g=>g.id===form.dataset.gameId);if(!game)return;
+    const raw=String(new FormData(form).get('players')||'').split(',').map(x=>x.trim()).filter(Boolean);
+    if(raw.length<game.min||raw.length>game.max){say('Il faut entre '+game.min+' et '+game.max+' joueurs.');return;}
+    if(new Set(raw.map(n=>n.toLowerCase())).size!==raw.length){say('Deux joueurs ont le même nom. Même dans ce casino, on évite les doublons.');return;}
+    const names=raw;
+    extraState={kind:'custom',game,names,turn:0,scores:Object.fromEntries(names.map(n=>[n,0])),used:[],current:null,round:0,roundsPlayed:Object.fromEntries(names.map(n=>[n,0]))};
     renderCustomGame();say('La partie '+game.title+' commence. '+names[0]+', prépare-toi.');
   }
   function renderCustomGame(message=''){
-    const g=extraState.game,p=extraState.names[extraState.turn];
-    $('#casino-content').innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">PARTIE PERSONNALISÉE · '+esc(g.type.toUpperCase())+'</span><h1>'+esc(g.title)+'</h1><p>Tour de '+esc(p)+' · Manche '+(extraState.round+1)+'</p></div><div class="cx-panel cx-custom-round"><div class="cx-current-prompt">'+(extraState.current?esc(extraState.current):'Clique sur « Tirer une épreuve » pour commencer.')+'</div><button class="casino-gold-btn" data-cx="custom-draw" '+(extraState.current?'disabled':'')+'>Tirer une épreuve</button><div class="cx-form-actions"><button class="casino-action" data-cx="custom-good" '+(!extraState.current?'disabled':'')+'>Réussite +'+g.points+'</button><button class="casino-action" data-cx="custom-pass" '+(!extraState.current?'disabled':'')+'>Passer</button><button class="casino-action" data-cx="custom-next">Joueur suivant →</button></div><p class="cx-result">'+esc(message)+'</p><ol class="cx-score">'+extraState.names.map(n=>'<li><span>'+esc(n)+'</span><b>'+extraState.scores[n]+' pt(s)</b></li>').join('')+'</ol></div><button class="casino-action" data-cx="custom-list">Quitter la partie</button></section>';
+    const g=extraState.game,p=extraState.names[extraState.turn],done=extraState.names.every(n=>extraState.roundsPlayed[n]>=(g.rounds||5));
+    $('#casino-content').innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">PARTIE PERSONNALISÉE · '+esc(g.type.toUpperCase())+'</span><h1>'+esc(g.title)+'</h1><p>Tour de '+esc(p)+' · Manche '+(extraState.round+1)+'</p></div><div class="cx-panel cx-custom-round"><div class="cx-current-prompt">'+(extraState.current?esc(extraState.current):'Clique sur « Tirer une épreuve » pour commencer.')+'</div><button class="casino-gold-btn" data-cx="custom-draw" '+(extraState.current?'disabled':'')+'>Tirer une épreuve</button><div class="cx-form-actions"><button class="casino-action" data-cx="custom-good" '+(!extraState.current?'disabled':'')+'>Réussite +'+g.points+'</button><button class="casino-action" data-cx="custom-pass" '+(!extraState.current?'disabled':'')+'>Passer</button><button class="casino-action" data-cx="custom-next">Joueur suivant →</button></div><p class="cx-result">'+esc(message)+'</p><ol class="cx-score">'+extraState.names.map(n=>'<li><span>'+esc(n)+' · '+extraState.roundsPlayed[n]+'/'+(g.rounds||5)+' manche(s)</span><b>'+extraState.scores[n]+' pt(s)</b></li>').join('')+'</ol></div><button class="casino-action" data-cx="custom-list">Quitter la partie</button></section>';
   }
   function drawCustom(){
-    const g=extraState.game,remaining=g.items.map((v,i)=>({v,i})).filter(x=>!extraState.used.includes(x.i));
+    clearInterval(customTimer);const g=extraState.game,remaining=g.items.map((v,i)=>({v,i})).filter(x=>!extraState.used.includes(x.i));
     if(!remaining.length)extraState.used=[];
     const pool=g.items.map((v,i)=>({v,i})).filter(x=>!extraState.used.includes(x.i));
     const item=pick(pool);extraState.used.push(item.i);extraState.current=item.v;extraState.round++;
@@ -203,13 +211,17 @@
     renderCustomGame();
     if(g.type==='dice'){const roll=1+Math.floor(Math.random()*6);extraState.current='Résultat du dé : '+roll+'. '+(roll>=4?'Réussite !':'Échec !');renderCustomGame();}
     say(extraState.names[extraState.turn]+', voici ton épreuve : '+extraState.current);
+    if(g.timer){customSeconds=g.timer;const el=$('[data-cx-timer]');if(el)el.textContent=customSeconds+' s';customTimer=setInterval(()=>{customSeconds--;const timerEl=$('[data-cx-timer]');if(timerEl)timerEl.textContent=customSeconds+' s';if(customSeconds<=0){clearInterval(customTimer);customTimer=null;if(extraState.current){say('Temps écoulé ! Même un escargot aurait répondu plus vite.');nextCustom(false);}}},1000);}
   }
   function nextCustom(success){
-    const g=extraState.game,p=extraState.names[extraState.turn];
+    const g=extraState.game,p=extraState.names[extraState.turn];clearInterval(customTimer);customTimer=null;
     if(success)extraState.scores[p]+=g.points;
-    extraState.current=null;extraState.turn=(extraState.turn+1)%extraState.names.length;
-    renderCustomGame(success?p+' marque '+g.points+' point(s).':p+' passe son tour.');
-    say(success?p+' marque des points. '+pick(wins):p+' passe. '+pick(roasts));
+    extraState.roundsPlayed[p]++;extraState.current=null;extraState.answer=null;extraState.answerRevealed=false;
+    let next=extraState.turn;for(let k=1;k<=extraState.names.length;k++){const candidate=(extraState.turn+k)%extraState.names.length;if(extraState.roundsPlayed[extraState.names[candidate]]<(g.rounds||5)){next=candidate;break;}}
+    extraState.turn=next;
+    const finished=extraState.names.every(n=>extraState.roundsPlayed[n]>=(g.rounds||5));
+    renderCustomGame(finished?'Partie terminée ! '+extraState.names.slice().sort((a,b)=>extraState.scores[b]-extraState.scores[a]).map((n,i)=>(i+1)+'. '+n+' ('+extraState.scores[n]+' pts)').join(' · '):success?p+' marque '+g.points+' point(s).':p+' passe son tour.');
+    say(finished?'Fin de partie ! '+extraState.names.slice().sort((a,b)=>extraState.scores[b]-extraState.scores[a]).map((n,i)=>(i+1)+', '+n+', '+extraState.scores[n]+' points').join('. '):success?p+' marque des points. '+pick(wins):p+' passe. '+pick(roasts));
   }
   function exportCustom(id){
     const g=customGames.find(x=>x.id===id);if(!g)return;
@@ -235,6 +247,7 @@
       if(a==='creator')renderCreator();
       if(a==='custom-list')renderCustomList();
       if(a==='custom-draw')drawCustom();
+      if(a==='custom-answer'&&extraState.answer){extraState.answerRevealed=true;renderCustomGame();say('La réponse attendue était : '+extraState.answer);}
       if(a==='custom-good')nextCustom(true);
       if(a==='custom-pass')nextCustom(false);
       if(a==='custom-next'){extraState.current=null;extraState.turn=(extraState.turn+1)%extraState.names.length;renderCustomGame();}
@@ -247,7 +260,7 @@
     if(b.dataset.cxExport){exportCustom(b.dataset.cxExport);return;}
     if(b.dataset.cxDelete){if(confirm('Supprimer ce jeu de la ludothèque ?')){customGames=customGames.filter(g=>g.id!==b.dataset.cxDelete);persistCustom();renderCustomList();}return;}
   }
-  function onExtraSubmit(e){if(e.target.id==='cx-create-form'){e.preventDefault();saveCustom(e.target);}}
+  function onExtraSubmit(e){if(e.target.id==='cx-create-form'){e.preventDefault();saveCustom(e.target);}if(e.target.id==='cx-custom-start-form'){e.preventDefault();startCustomFromForm(e.target);}}
   function onExtraChange(e){if(e.target.matches('[data-audio-music]')){audioPrefs.musicVolume=Number(e.target.value);startAudio();applyAudio();}if(e.target.id==='cx-import-file'&&e.target.files?.[0])importCustom(e.target.files[0]);}
   function mount(root){
     if(root.dataset.expansionMounted)return;root.dataset.expansionMounted='1';
