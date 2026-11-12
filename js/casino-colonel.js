@@ -43,6 +43,7 @@
     if(new Set(names.map(x=>x.toLowerCase())).size!==names.length){say('Deux joueurs portent le même nom. Changez ça.');return;}
     const stake=Number(f.get('stake')||0);if(stake>0&&stake*names.length>(window.PO_CASINO?.account?.bankroll||1000)){say('La caisse ne peut pas couvrir cette mise.');return;}
     game={names,stake,mode:f.get('mode'),banter:f.has('banter'),phase:'predictions',turn:0,players:names.map(name=>({name,hand:[],predictions:[],misses:0,position:0,penalties:0,alive:true})),deck:[],pyramid:[],row:0,col:0,history:[],started:Date.now()};
+    try{const hp=JSON.parse(localStorage.getItem('po-casino-host-profile-v1')||'{}');const fx=hp.activeEffects||[];game.axeReroll=fx.includes('foam-axe');game.phantomShield=fx.includes('phantom');game.chaos=fx.includes('x9');game.smokeCover=fx.includes('smoke-prop');game.secretContract=fx.includes('case');hp.activeEffects=[];localStorage.setItem('po-casino-host-profile-v1',JSON.stringify(hp));}catch{}
     const st=read();st.plays++;persist(st);renderPrediction();say('Le Lord ferme la porte. Quatre prédictions vous attendent. '+names[0]+', à toi.');
   }
   function current(){return game.players[game.turn];}
@@ -146,6 +147,7 @@
   function mount(r){if(r.dataset.undergroundMounted)return;r.dataset.undergroundMounted='1';root=r;nav();r.addEventListener('click',click);r.addEventListener('submit',e=>{if(e.target.id==='uc-setup')start(e);});}
   document.addEventListener('po:casino-item-use',e=>{
     const id=e.detail?.id;if(!game)return;
+    try{const hp=JSON.parse(localStorage.getItem('po-casino-host-profile-v1')||'{}');hp.activeEffects=(hp.activeEffects||[]).filter(x=>x!==id);localStorage.setItem('po-casino-host-profile-v1',JSON.stringify(hp));}catch{}
     if(id==='foam-axe'){game.axeReroll=true;say('La hache en mousse est prête. Ton prochain lancer de parcours pourra être relancé.');}
     if(id==='phantom'){game.phantomShield=true;say('Le bouclier Phantom est actif. Il annulera la prochaine pénalité du parcours.');}
     if(id==='x9'){game.chaos=true;say('Mode Chaos activé. Certains événements du parcours peuvent s’inverser.');}
