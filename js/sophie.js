@@ -218,6 +218,13 @@ export const Sophie = {
     if (!raw) return 'Je t’écoute. Formule ta demande, par exemple : qu’est-ce que j’ai aujourd’hui ?';
     const text = normalize(raw);
     // Sophie Games intercepte uniquement les commandes liées à une partie active ou à son lancement.
+    // Le casino dédié prend la priorité sur l'ancien mini-module de jeux.
+    if (/casino|blackjack|roulette/.test(text) && window.PO_CASINO) {
+      const tab = /roulette/.test(text) ? 'roulette' : /blackjack/.test(text) ? 'blackjack' : 'lobby';
+      window.PO_CASINO.open(tab);
+      const casinoReply = tab === 'roulette' ? 'La table de roulette est ouverte. Choisis ta mise, puis lance la bille.' : tab === 'blackjack' ? 'La table de blackjack est ouverte. Configure les joueurs et les mises.' : 'Le casino est ouvert. Choisissez votre table.';
+      this.log(raw, casinoReply); return casinoReply;
+    }
     const gameReply = window.PO_GAMES?.handleCommand(raw);
     if (gameReply) { this.log(raw, gameReply); return gameReply; }
     const answered = this.confirmPending(text);
