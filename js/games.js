@@ -59,7 +59,7 @@
   function total(hand){let sum=0,aces=0;hand.forEach(c=>{if(c.value==='A'){sum+=11;aces++;}else sum+=['K','Q','J'].includes(c.value)?10:Number(c.value);});while(sum>21&&aces){sum-=10;aces--;}return sum;}
   function cardsHTML(hand,hide=false){return '<div class="bj-cards">'+hand.map((c,i)=>hide&&i===1?'<div class="bj-card back" aria-label="Carte cachée"></div>':'<div class="bj-card '+(['♥','♦'].includes(c.suit)?'red':'')+'"><b>'+c.value+'</b><i>'+c.suit+'</i></div>').join('')+'</div>';}
   function startBlackjack(){
-    state.game='blackjack';shuffle();state.hands=state.players.map(()=>[draw(),draw()]);state.dealer=[draw(),draw()];state.turn=0;state.bjDone=state.hands.map(()=>false);renderBlackjack();
+    state.game='blackjack';state.roundOver=false;state.bjMessage='';shuffle();state.hands=state.players.map(()=>[draw(),draw()]);state.dealer=[draw(),draw()];state.turn=0;state.bjDone=state.hands.map(()=>false);renderBlackjack();
     return say('Bienvenue au blackjack. '+state.players[state.turn]+', à toi. Tu as '+total(state.hands[state.turn])+' points. Dis « tire » ou « reste ».');
   }
   function renderBlackjack(message=''){
@@ -108,7 +108,7 @@
       if(/quiz/.test(q)){open();return start('quiz');}
       if(/mystery|enquete/.test(q)){open();return start('mystery');}
       if(/party|ambiance|defi/.test(q)){open();return start('party');}
-      if(/personnalise|invent|cree.*jeu/.test(q)){open();return start('custom');}
+      if(/personnalise|invent|cree.*jeu/.test(q)){open();setPlayers();const idea=raw.replace(/^(?:sophie[, ]*)?(?:invente|crée|cree|imagine|prépare|prepare)\s+(?:moi\s+)?(?:un\s+)?jeu\s*(?:sur|autour de|pour|:)?\s*/i,'').trim()||raw;state.custom={prompt:idea,round:0};state.game='custom-play';const challenge='Manche 1 — '+idea+'. Chaque joueur dispose de 30 secondes pour proposer sa réponse ou relever le défi. Les autres votent pour la proposition la plus drôle, créative ou convaincante.';body().innerHTML='<div class="pg-tile"><span class="pg-badge">JEU PERSONNALISÉ</span><h3>'+esc(idea)+'</h3><p class="pg-q">'+esc(challenge)+'</p><p class="pg-muted">Ordre de passage : '+esc(state.players.join(' → '))+'</p><button class="pg-btn primary" data-custom="next">Inventer une autre manche</button><button class="pg-btn" data-custom="back">Retour aux jeux</button></div>';return say('J’ai créé un jeu autour de : '+idea+'. '+challenge);}
       if(!state.game){open();return say('La salle de jeux est ouverte. Quel jeu choisissez-vous ?');}
     }
     if(!state.game)return null;
