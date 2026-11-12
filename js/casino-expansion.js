@@ -279,5 +279,5 @@
   const observer=new MutationObserver(()=>{const root=$('#po-casino');if(root&&!root.dataset.expansionMounted)mount(root);});
   observer.observe(document.body,{childList:true,subtree:true});
   if($('#po-casino'))mount($('#po-casino'));
-  document.addEventListener('click',e=>{if(e.target.closest('[data-casino-open]')){setTimeout(()=>{const r=$('#po-casino');if(r&&!r.dataset.expansionMounted)mount(r);},0);}});
+  document.addEventListener('click',e=>{if(e.target.closest('[data-casino-open]')){startAudio();setTimeout(()=>{const r=$('#po-casino');if(r&&!r.dataset.expansionMounted)mount(r);},0);}},true);
 })();
