@@ -10,7 +10,7 @@ import { Bus } from './core.js';
   const KEY='po-casino-host-profile-v1';
   const defaults={rep:0,credits:180,heat:0,inventory:['badge'],missionsDone:0,missions:0,unlocked:['lobby','backroom'],history:[]};
   const load=()=>{try{return {...defaults,...JSON.parse(localStorage.getItem(KEY)||'{}')};}catch{return {...defaults};}};
-  let profile=load(),root=null,stage=null,activeTab='dealer',lastSpeech='',lastHeard='',speakingTimer=0;
+  let profile=load(),root=null,stage=null,activeTab='dealer',lastSpeech='',lastHeard='',speakingTimer=0,conversation=[];
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(profile));}catch{}};
   const say=t=>window.PO_CASINO?.say?.(t);
   const items=[
@@ -51,7 +51,7 @@ import { Bus } from './core.js';
       '<div class="chs-stats"><div><small>RÉPUTATION</small><b>'+profile.rep+'</b></div><div><small>CRÉDITS DU LORD</small><b>'+profile.credits+'</b></div><div><small>NIVEAU DE CHALEUR</small><b>'+profile.heat+'/5</b></div></div>'+
       '<div class="chs-now"><span>TABLE DÉTECTÉE</span><b>'+esc(game.label)+'</b><small>'+esc(game.detail)+'</small></div>'+
       '<div class="chs-quick"><button data-host-action="listen">🎙 Parler à Sophie</button><button data-host-action="repeat">↻ Répéter</button><button data-host-action="rules">Règles de la table</button></div>'+
-      '<div class="chs-transcript"><small>DERNIÈRE PHRASE ENTENDUE</small><b data-host-heard>'+esc(lastHeard||'Le micro attend ton signal…')+'</b></div>';
+      '<div class="chs-transcript"><small>DERNIÈRE PHRASE ENTENDUE</small><b data-host-heard>'+esc(lastHeard||'Le micro attend ton signal…')+'</b></div><div class="chs-conversation" data-host-conversation>'+conversation.slice(-5).map(m=>'<div class="'+m.role+'"><small>'+(m.role==='sophie'?'SOPHIE':'JOUEUR')+'</small><span>'+esc(m.text)+'</span></div>').join('')+'</div>';
     }else if(activeTab==='dossier'){
       c.innerHTML='<div class="chs-kicker">ARCHIVES CONFIDENTIELLES</div><h3>Le marché du sous-sol</h3><p>Chaque objet possède une utilité dans le scénario. Tout est fictif : accessoires inertes, effets de jeu et substances inventées.</p>'+
       '<div class="chs-wallet"><span>TES CRÉDITS</span><b>'+profile.credits+' ◈</b></div><div class="chs-items">'+items.map(it=>'<article class="chs-item"><span class="chs-item-icon">'+it.icon+'</span><div><b>'+it.name+'</b><small>'+it.desc+'</small><em>'+it.effect+'</em></div><strong>'+(profile.inventory.includes(it.id)?'EN POCHE':it.price+' ◈')+'</strong>'+(profile.inventory.includes(it.id)?'<button data-host-use="'+it.id+'">'+(it.kind==='prop'||it.id==='glasses'||it.id==='badge'?'Équiper':'Utiliser')+'</button>':'<button data-host-buy="'+it.id+'" '+(profile.credits<it.price?'disabled':'')+'>Acheter</button>')+'</article>').join('')+'</div>';
@@ -74,9 +74,10 @@ import { Bus } from './core.js';
     if(t.includes('bataille'))return {id:'highcard',label:'Bataille de cartes',detail:'La main va être révélée'};
     return {id:'lobby',label:'Salon principal',detail:'Choisis une table pour commencer'};
   }
+  function logConversation(role,text){conversation.push({role,text:String(text||'')});if(conversation.length>30)conversation=conversation.slice(-30);const box=$('[data-host-conversation]',stage);if(box){box.innerHTML=conversation.slice(-5).map(m=>'<div class="'+m.role+'"><small>'+(m.role==='sophie'?'SOPHIE':'JOUEUR')+'</small><span>'+esc(m.text)+'</span></div>').join('');box.scrollTop=box.scrollHeight;}}
   function setAvatar(state){const a=$('.sophie-avatar',stage);if(a){a.classList.remove('state-idle','state-listening','state-thinking','state-speaking');a.classList.add('state-'+state);}const label=$('[data-host-state]',stage);if(label)label.textContent=({idle:'En attente',listening:'Je t’écoute',thinking:'Je réfléchis',speaking:'Je parle'}[state]||state);}
   function onSpeak(text){
-    if(!stage)return;lastSpeech=String(text);const p=$('[data-host-speech]',stage);if(p)p.textContent='« '+lastSpeech+' »';
+    if(!stage)return;lastSpeech=String(text);logConversation('sophie',lastSpeech);const p=$('[data-host-speech]',stage);if(p)p.textContent='« '+lastSpeech+' »';
     const provider=TTS.status();const v=$('[data-host-provider]',stage);if(v)v.textContent='Voix : '+provider.active+' · '+provider.mode;
     const voiceEnabled=$('#casino-voice',root)?.checked!==false;if(voiceEnabled)document.dispatchEvent(new CustomEvent('po:casino-speaking',{detail:{active:true}}));setAvatar(voiceEnabled?'speaking':'idle');clearTimeout(speakingTimer);speakingTimer=setTimeout(()=>{setAvatar('idle');if(voiceEnabled)document.dispatchEvent(new CustomEvent('po:casino-speaking',{detail:{active:false}}));},Math.min(12000,Math.max(2200,lastSpeech.length*62)));
   }
@@ -117,7 +118,7 @@ import { Bus } from './core.js';
     return false;
   }
   function handle(raw){
-    lastHeard=String(raw||'');const heard=$('[data-host-heard]',stage);if(heard)heard.textContent='« '+lastHeard+' »';setAvatar('thinking');
+    lastHeard=String(raw||'');logConversation('player',lastHeard);const heard=$('[data-host-heard]',stage);if(heard)heard.textContent='« '+lastHeard+' »';setAvatar('thinking');
     const t=lastHeard.toLowerCase();
     if(/\b(aide|que puis je faire|commandes)\b/.test(t)){say('Tu peux me parler comme à une vraie croupière : tire, reste, double, mise sur le rouge, numéro 17, lance les dés, révèle la banque ou joueur suivant. Je gère la table.');return true;}
     if(/\b(regles|règles)\b/.test(t)){const g=detectGame();say(g.id==='blackjack'?'Blackjack : approche-toi de 21 sans dépasser. Tu peux tirer, rester ou doubler. La banque révèle sa carte quand tous les joueurs ont terminé.':g.id==='roulette'?'Roulette européenne : choisis une couleur, une parité ou un numéro de zéro à trente-six, puis lance la bille.':'Je suis la maîtresse de cérémonie. Les règles détaillées sont affichées sur la table.');return true;}
