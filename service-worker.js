@@ -3,7 +3,7 @@
    Ainsi, toute correction est prise en compte dès le rechargement,
    même si une ancienne version a été mise en cache. */
 
-const CACHE = 'personal-os-shell-v3.7.0';
+const CACHE = 'personal-os-shell-v3.8.0';
 const SHELL = [
   './', './index.html', './style.css', './theme-os.css', './maison-hub.css', './script.js', './manifest.json', './icon.svg',
   './js/layout.js', './js/core.js', './js/ui.js', './js/view-state.js', './js/views.js',
@@ -11,7 +11,7 @@ const SHELL = [
   './js/voice.js', './js/sophie.js', './js/tts.js', './js/news.js',
   './js/alarms.js', './js/focus.js', './js/reminders.js',
   './js/views-maison.js', './js/maison-hub.js', './js/camera.js', './js/sophie-avatar.js', './js/security.js', './security.css',
-  './casino.js', './casino.css', './casino-expansion.css', './light-mode.css', './js/casino-expansion.js', './casino-interaction.css', './js/casino-interaction.js'
+  './casino.js', './casino.css', './casino-expansion.css', './light-mode.css', './js/casino-expansion.js', './casino-interaction.css', './js/casino-interaction.js', './casino-colonel.css', './js/casino-colonel.js'
 ];
 
 self.addEventListener('install', event => {
