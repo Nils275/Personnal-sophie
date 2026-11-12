@@ -43,7 +43,7 @@
     voiceSupported=true;
     if(recognition)return true;
     recognition=new API();recognition.lang='fr-FR';recognition.continuous=true;recognition.interimResults=true;recognition.maxAlternatives=1;
-    recognition.onstart=()=>{listening=true;status('Je t’écoute. Parle naturellement, je m’occupe du reste.','live');updateMode();};
+    recognition.onstart=()=>{listening=true;status('Je t’écoute. Parle naturellement, je m’occupe du reste.','live');document.dispatchEvent(new CustomEvent('po:casino-listening',{detail:{active:true}}));updateMode();};
     recognition.onresult=e=>{
       let finalText='';
       for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0]?.transcript||'';if(e.results[i].isFinal)finalText+=t;}
@@ -55,7 +55,7 @@
       else if(e.error!=='aborted')status('Micro : '+e.error,'error');
       updateMode();
     };
-    recognition.onend=()=>{listening=false;updateMode();if(restart&&mode!=='click'){setTimeout(()=>{try{recognition.start();}catch{}},350);}else if(mode!=='click')status('Micro en pause. Réactive-le pour continuer.','idle');};
+    recognition.onend=()=>{listening=false;document.dispatchEvent(new CustomEvent('po:casino-listening',{detail:{active:false}}));updateMode();if(restart&&mode!=='click'){setTimeout(()=>{try{recognition.start();}catch{}},350);}else if(mode!=='click')status('Micro en pause. Réactive-le pour continuer.','idle');};
     return true;
   }
   function startListening(){
@@ -81,6 +81,7 @@
     const text=normal(raw);if(!text||commandBusy)return;
     commandBusy=true;setTimeout(()=>commandBusy=false,450);
     lastTranscript=raw;
+    if(window.PO_CASINO_HOST?.handle(raw)){const heard=$('[data-casino-last-command]');if(heard)heard.textContent='« '+raw+' »';return;}
     const last=$('[data-casino-last-command]');if(last)last.textContent='« '+raw+' »';
     status('Commande comprise : '+raw,'live');
     if(/\b(arrete|stop) (de )?m ecouter\b/.test(text)||text==='stop ecoute'){stopListening();say('Très bien, je coupe le micro.');return;}
