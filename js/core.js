@@ -269,7 +269,7 @@ const DEFAULT_WIDGETS = [
 ];
 
 const defaultSettings = () => ({
-  accent: '#2E8FE0', accent2: '#20B8C4', theme: 'classique', density: 'confortable', animations: true, reducedGlow: false,
+  accent: '#37D6A0', accent2: '#35BDE0', theme: 'nocturne', density: 'confortable', animations: true, reducedGlow: false,
   widgets: structuredClone(DEFAULT_WIDGETS), compactDashboard: true, voiceEnabled: true, voiceRate: 1, voicePitch: 1,
   autoAnnounce: true, announcementFrequency: 'important', announcementInterval: 5, quietEnabled: true, quietStart: '22:00', quietEnd: '07:00',
   browserNotifications: false, demoBanner: true, weather: { lat: '', lon: '', label: '', updatedAt: '', data: null, daily: null },

@@ -14,6 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;550;600;650;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="theme-os.css">
   <style>html{background:#080D12;color:#EAF3F4}body{margin:0}.boot-fallback{min-height:100vh;display:grid;place-items:center;font-family:system-ui;background:#080D12}.boot-fallback span{color:#37D6A0}</style>
 </head>
 <body>
@@ -24,7 +25,8 @@
     <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
       <div class="brand" aria-label="Système d'exploitation personnel">
         <span class="brand-logo" aria-hidden="true"><span class="logo-diamond"></span><span class="logo-p">P</span></span>
-        <span class="brand-copy"><strong>SYSTÈME D’EXPLOITATION</strong><em>PERSONNEL</em></span>
+        <span class="brand-copy"><strong>PERSONAL OS</strong><em>PERSONNEL</em></span>
+        <button class="rail-toggle" data-rail-toggle type="button" aria-pressed="false" aria-label="Replier le menu" title="Replier le menu (Ctrl+B)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
       </div>
       <nav id="main-nav" class="main-nav">
         <button class="nav-item home-item active" data-section="maison" aria-current="page"><span class="nav-ico" data-icon="home"></span><span>Maison</span><small>ACCUEIL •</small><i class="nav-signal"></i></button>
@@ -192,6 +194,7 @@
         '<button onclick="location.reload()" style="margin-top:16px;padding:11px 20px;border-radius:9px;border:0;background:#FF7A1A;color:#1A0D02;font-weight:600;cursor:pointer">Recharger l’application</button>';
     }, 6500);
   </script>
+  <script type="module" src="js/layout.js"></script>
   <script type="module" src="script.js"></script>
 </body>
 </html>
