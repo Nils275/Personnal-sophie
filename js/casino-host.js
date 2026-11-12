@@ -1,5 +1,6 @@
 import { SophieAvatar } from './sophie-avatar.js';
 import { TTS } from './tts.js';
+import { Bus } from './core.js';
 
 (() => {
   'use strict';
@@ -80,6 +81,7 @@ import { TTS } from './tts.js';
   }
   function currentPlayer(){return $('.casino-turn-info strong')?.textContent||$('.uc-player-strip .active')?.textContent?.split(' · ')[0]||'';}
   function click(sel){const b=$(sel);if(b&&!b.disabled){b.click();return true;}return false;}
+  function clickAny(selectors){for(const sel of selectors.split(',')){if(click(sel.trim()))return true;}return false;}
   function action(text){
     const t=String(text||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
     const game=detectGame();
@@ -87,7 +89,7 @@ import { TTS } from './tts.js';
     if(/\b(double|double la mise|je double)\b/.test(t))return click('[data-bj="double"]');
     if(/\b(tire|je tire|carte|une carte|hit|encore une)\b/.test(t)&&game.id==='blackjack')return click('[data-bj="hit"]');
     if(/\b(revele la banque|montre la banque|termine la manche)\b/.test(t))return click('[data-bj="settle"]');
-    if(/\b(joueur suivant|au suivant|suivant)\b/.test(t))return click('[data-bj="next"],[data-cx="dice-next"],[data-cx="custom-next"]');
+    if(/\b(joueur suivant|au suivant|suivant)\b/.test(t))return clickAny('[data-bj="next"],[data-cx="dice-next"],[data-cx="custom-next"]');
     if(/\b(rouge|noir|pair|impair|plein|manque|passe|tiers|zero)\b/.test(t)&&game.id==='roulette'){
       const type=[['rouge','red'],['noir','black'],['pair','even'],['impair','odd'],['manque','low'],['plein','high']].find(([w])=>t.includes(w));
       if(type&&click('[data-roulette-type="'+type[1]+'"]'))return true;
@@ -172,6 +174,7 @@ import { TTS } from './tts.js';
     if(original&&!window.PO_CASINO.__hostWrapped){window.PO_CASINO.say=(text)=>{const out=original(text);onSpeak(text);return out;};window.PO_CASINO.__hostWrapped=true;}
     root.addEventListener('click',e=>{if(e.target.closest('[data-casino-tab],[data-casino-extra],[data-underground],[data-cx],[data-bj],[data-roulette-spin]'))setTimeout(()=>{if(activeTab==='dealer')renderTab();},80);});
   }
+  Bus.on('tts:provider',e=>{const v=$('[data-host-provider]',stage);if(v)v.textContent='Voix active : '+(e?.provider==='elevenlabs'?'ElevenLabs · Sophie':'voix native');});
   window.PO_CASINO_HOST={handle,refresh:renderTab,get profile(){return {...profile};},mission:newMission};
   const observer=new MutationObserver(()=>mount());observer.observe(document.documentElement,{childList:true,subtree:true});if($('#po-casino'))mount();
   document.addEventListener('po:casino-voice',e=>handle(e.detail?.text||''));
