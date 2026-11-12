@@ -7,7 +7,7 @@
   const read = (key, fallback) => { try { const v=JSON.parse(localStorage.getItem(key)); return v ?? fallback; } catch { return fallback; } };
   let customGames = read(CUSTOM_KEY, []);
   let audioPrefs = read(AUDIO_KEY, {music:true,fx:true,voice:true,musicVolume:.24,fxVolume:.45});
-  let audio = null, audioNodes = [], audioStarted = false;
+  let audio = null, audioNodes = [], audioStarted = false, audioActive = false, musicTimer = null, musicStep = 0;
   let activeExtra = 'lobby';
   let extraState = {};
 
@@ -26,7 +26,12 @@
       o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration+.02);
     } catch {}
   };
+  function suspenseNote(){
+    if(!audio||!audioActive||audioPrefs.muted||!audioPrefs.music)return;
+    try{const notes=[110,130.81,164.81,146.83,110,98,123.47,130.81],o=audio.createOscillator(),g=audio.createGain(),now=audio.currentTime;o.type='sine';o.frequency.value=notes[musicStep++%notes.length];g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.035*audioPrefs.musicVolume,now+.12);g.gain.exponentialRampToValueAtTime(.0001,now+1.15);o.connect(g);g.connect(audio.master);o.start(now);o.stop(now+1.2);}catch{}
+  }
   function startAudio() {
+    audioActive=true;
     const AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)return;
     try {
@@ -41,12 +46,13 @@
         const lfo=audio.createOscillator(),lfoGain=audio.createGain();lfo.frequency.value=.08;lfoGain.gain.value=55;lfo.connect(lfoGain);lfoGain.connect(filter.frequency);lfo.start();
         audioNodes=[master,pad1,pad2,lfo,padGain,filter];
         audio.master=master;
+        if(!musicTimer)musicTimer=setInterval(suspenseNote,1450);
       }
       audio.resume();audioStarted=true;applyAudio();
     } catch(e){console.warn('[Casino] Audio non disponible',e);}
   }
   function applyAudio(){
-    if(audio?.master)audio.master.gain.setTargetAtTime(audioPrefs.music&&!audioPrefs.muted?audioPrefs.musicVolume:0,audio.currentTime,.15);
+    if(audio?.master)audio.master.gain.setTargetAtTime(audioActive&&audioPrefs.music&&!audioPrefs.muted?audioPrefs.musicVolume:0,audio.currentTime,.15);
     const btn=$('[data-audio-toggle]');if(btn){btn.textContent=audioPrefs.muted?'Son coupé':'Son activé';btn.setAttribute('aria-pressed',String(!audioPrefs.muted));}
     const music=$('[data-audio-music]');if(music)music.value=audioPrefs.musicVolume;
     const fx=$('[data-audio-fx]');if(fx)fx.value=audioPrefs.fxVolume;
@@ -246,8 +252,9 @@
   function mount(root){
     if(root.dataset.expansionMounted)return;root.dataset.expansionMounted='1';
     injectTabs();root.addEventListener('click',onExtraClick);root.addEventListener('submit',onExtraSubmit);root.addEventListener('change',onExtraChange);
+    root.addEventListener('click',e=>{if(e.target.closest('[data-casino-close]')||e.target===root){audioActive=false;applyAudio();}});
     root.addEventListener('click',e=>{if(e.target.matches('[data-audio-toggle]')){audioPrefs.muted=!audioPrefs.muted;startAudio();applyAudio();}if(e.target.matches('[data-audio-fx-toggle]')){audioPrefs.fx=!audioPrefs.fx;applyAudio();}if(e.target.matches('[data-audio-voice-toggle]')){audioPrefs.voice=!audioPrefs.voice;applyAudio();}});
-    root.addEventListener('click',e=>{if(!audioStarted&&!audioPrefs.muted)startAudio();const target=e.target.closest('[data-bj],[data-roulette-spin]');if(target)playTone(target.dataset.bj==='settle'?520:target.dataset.bj?330:240,.09);},{capture:true});
+    root.addEventListener('click',e=>{if(!audioActive&&!audioPrefs.muted)startAudio();const target=e.target.closest('[data-bj],[data-roulette-spin]');if(target)playTone(target.dataset.bj==='settle'?520:target.dataset.bj?330:240,.09);},{capture:true});
     const content=$('#casino-content');if(content)new MutationObserver(()=>{if(activeExtra==='lobby')addLobbyCards();}).observe(content,{childList:true});
     addLobbyCards();
   }
