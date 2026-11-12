@@ -1,3 +1,4 @@
+import { TTS } from './js/tts.js';
 /* PERSONAL OS — CASINO SOPHIE
  * Casino fictif local : blackjack multijoueur et roulette européenne.
  * Aucun argent réel, aucun compte, aucun réseau. Soldes conservés sur cet appareil.
@@ -29,7 +30,7 @@
     'Pas mal du tout. La banque vient de perdre son sourire.'
   ];
   function roast(win){return (win?wins:roasts)[Math.floor(Math.random()*(win?wins:roasts).length)];}
-  function say(text){lastMessage=text;$('#casino-announcer')?.replaceChildren(document.createTextNode(text));try{window.dispatchEvent(new CustomEvent('sophie:speak',{detail:{text}}));if(window.speechSynthesis&&$('#casino-voice')?.checked){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='fr-FR';u.rate=1.03;speechSynthesis.speak(u);}}catch{}return text;}
+  function say(text){lastMessage=text;$('#casino-announcer')?.replaceChildren(document.createTextNode(text));try{if($('#casino-voice')?.checked)TTS.speak(text,{force:true});}catch(error){console.warn('[Casino/Sophie] Synthèse vocale indisponible',error);}return text;}
   function ensure(){
     let root=$('#po-casino');if(root)return root;
     root=document.createElement('div');root.id='po-casino';root.className='casino-shell';root.hidden=true;
