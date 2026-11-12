@@ -217,6 +217,9 @@ export const Sophie = {
     const raw = String(rawCommand || '').trim().replace(/^(?:h[ée] sophie|dis sophie|ok sophie|sophie|hey sophie)[,;\s-]*/i, '').trim();
     if (!raw) return 'Je t’écoute. Formule ta demande, par exemple : qu’est-ce que j’ai aujourd’hui ?';
     const text = normalize(raw);
+    // Sophie Games intercepte uniquement les commandes liées à une partie active ou à son lancement.
+    const gameReply = window.PO_GAMES?.handleCommand(raw);
+    if (gameReply) { this.log(raw, gameReply); return gameReply; }
     const answered = this.confirmPending(text);
     if (answered) { this.log(raw, answered); return answered; }
 
