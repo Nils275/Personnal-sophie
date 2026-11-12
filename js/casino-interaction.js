@@ -3,7 +3,7 @@
   'use strict';
   const KEY='po-casino-control-mode-v1';
   const readMode=()=>{try{return localStorage.getItem(KEY)||'hybrid';}catch{return 'hybrid';}};
-  let mode=readMode(),recognition=null,listening=false,restart=false,voiceSupported=false,lastTranscript='',commandBusy=false;
+  let mode=readMode(),recognition=null,listening=false,restart=false,speechPaused=false,voiceSupported=false,lastTranscript='',commandBusy=false;
   const $=(s,r=document)=>r.querySelector(s);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const normal=s=>String(s||'').toLocaleLowerCase('fr-FR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
@@ -55,7 +55,7 @@
       else if(e.error!=='aborted')status('Micro : '+e.error,'error');
       updateMode();
     };
-    recognition.onend=()=>{listening=false;document.dispatchEvent(new CustomEvent('po:casino-listening',{detail:{active:false}}));updateMode();if(restart&&mode!=='click'){setTimeout(()=>{try{recognition.start();}catch{}},350);}else if(mode!=='click')status('Micro en pause. Réactive-le pour continuer.','idle');};
+    recognition.onend=()=>{listening=false;document.dispatchEvent(new CustomEvent('po:casino-listening',{detail:{active:false}}));updateMode();if(restart&&mode!=='click'&&!speechPaused){setTimeout(()=>{try{recognition.start();}catch{}},350);}else if(mode!=='click')status('Micro en pause. Réactive-le pour continuer.','idle');};
     return true;
   }
   function startListening(){
@@ -146,6 +146,12 @@
   observer.observe(document.documentElement,{childList:true,subtree:true});
   if($('#po-casino'))mount($('#po-casino'));
   document.addEventListener('click',e=>{if(e.target.closest('[data-casino-open]'))setTimeout(()=>{const root=$('#po-casino');if(root)mount(root);},30);});
+  document.addEventListener('po:casino-speaking',e=>{
+    const active=!!e.detail?.active;
+    speechPaused=active;
+    if(active&&recognition&&listening){try{recognition.stop();}catch{}}
+    else if(!active&&restart&&mode!=='click'&&recognition){setTimeout(()=>{try{recognition.start();}catch{}},300);}
+  });
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopListening();});
   window.addEventListener('pagehide',stopListening);
 })();
