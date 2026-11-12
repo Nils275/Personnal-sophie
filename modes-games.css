@@ -120,3 +120,27 @@ html[data-mode="light"] .hub-switch { background: rgba(20,40,70,.05); border-col
 .pg-qedit .pg-row > * { flex: 1 1 180px; }
 @media (max-width: 560px) { .bj-card { width: 52px; height: 76px; font-size: 16px; } .bj-card i { font-size: 24px; } .pg-body { padding: 12px; } }
 @media (prefers-reduced-motion: reduce) { .bj-card { animation: none; } }
+
+
+/* Sophie Games — présentation de l'overlay et des interactions locales */
+#po-games { overflow-y: auto; }
+#po-games .pg-card { margin: auto; }
+#po-games .pg-tile > p { line-height: 1.55; }
+#po-games .pg-tile ul, #po-games .pg-tile ol { color: var(--text-soft); line-height: 1.7; padding-left: 22px; }
+#po-games .pg-tile label { margin-top: 6px; }
+#po-games .pg-tile textarea { min-height: 110px; }
+#po-games .pg-head .pg-badge { flex: none; }
+#po-games .bj-table { width: 100%; box-sizing: border-box; }
+#po-games .bj-hand { min-width: 0; }
+#po-games .bj-cards { align-items: center; }
+#po-games .pg-answers button { transition: border-color .15s, background .15s, transform .15s; }
+#po-games .pg-answers button:active { transform: scale(.98); }
+#po-games .pg-tile .pg-q { line-height: 1.35; }
+html[data-mode="light"] #po-games .bj-table { color: #fff; }
+@media (max-width: 560px) {
+  #po-games { padding: 7px; }
+  #po-games .pg-card { max-height: calc(100dvh - 14px); border-radius: 18px; }
+  #po-games .pg-head { padding: 12px; }
+  #po-games .pg-grid { grid-template-columns: 1fr; }
+  #po-games .pg-answers { grid-template-columns: 1fr; }
+}
