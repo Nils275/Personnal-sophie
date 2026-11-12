@@ -3,7 +3,7 @@
   'use strict';
   const KEY='po-casino-control-mode-v1';
   const readMode=()=>{try{return localStorage.getItem(KEY)||'hybrid';}catch{return 'hybrid';}};
-  let mode=readMode(),recognition=null,listening=false,restart=false,voiceSupported=false,lastTranscript='',commandBusy=false;
+  let mode=readMode(),recognition=null,listening=false,restart=false,speechPaused=false,voiceSupported=false,lastTranscript='',commandBusy=false;
   const $=(s,r=document)=>r.querySelector(s);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const normal=s=>String(s||'').toLocaleLowerCase('fr-FR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
@@ -16,7 +16,7 @@
     if(root.querySelector('[data-casino-control-panel]'))return;
     const panel=document.createElement('section');
     panel.className='casino-control-panel';panel.dataset.casinoControlPanel='';
-    panel.innerHTML='<div class="ccp-top"><div><span class="casino-eyebrow">PILOTAGE DE LA PARTIE</span><h3>Comment veux-tu jouer ?</h3><p>Choisis ton style de commande. Tu peux le modifier à tout moment, même au milieu d’une manche.</p></div><span class="ccp-live"><i></i> SOPHIE À L’ÉCOUTE</span></div><div class="ccp-modes" role="group" aria-label="Mode de contrôle"><button type="button" data-control-mode="click"><b>⌖</b><span><strong>CLIC</strong><small>Souris / écran tactile</small></span></button><button type="button" data-control-mode="voice"><b>♫</b><span><strong>VOCAL</strong><small>Commandes à Sophie</small></span></button><button type="button" data-control-mode="hybrid"><b>◈</b><span><strong>HYBRIDE</strong><small>Clic et voix combinés</small></span></button></div><div class="ccp-voice"><div class="ccp-mic"><span class="ccp-mic-icon">🎙</span><div><strong>Commande vocale Sophie</strong><small data-casino-voice-status data-state="idle">Micro désactivé. Active-le pour parler à Sophie.</small></div></div><div class="ccp-voice-actions"><button type="button" class="casino-gold-btn" data-voice-start>Activer le micro</button><button type="button" class="casino-action" data-voice-stop disabled>Arrêter</button></div></div><details class="ccp-help"><summary>Voir les commandes vocales disponibles</summary><div class="ccp-command-grid"><span>« Ouvre le blackjack »</span><span>« Va à la roulette »</span><span>« Machine à sous »</span><span>« Lance les rouleaux »</span><span>« Tire une carte » / « Reste »</span><span>« Double la mise »</span><span>« Joueur suivant »</span><span>« Lance les dés »</span><span>« Tire une épreuve »</span><span>« Réussite » / « Je passe »</span><span>« Mise 50 »</span><span>« Répète les règles »</span><span>« Retour au salon »</span><span>« Coupe le son »</span><span>« Sophie, aide-moi »</span><span>« Arrête d’écouter »</span></div></details><div class="ccp-last" aria-live="polite"><span>DERNIÈRE COMMANDE</span><strong data-casino-last-command>En attente de ta voix…</strong></div></section>';
+    panel.innerHTML='<div class="ccp-top"><div><span class="casino-eyebrow">PILOTAGE DE LA PARTIE</span><h3>Comment veux-tu jouer ?</h3><p>Choisis ton style de commande. Tu peux le modifier à tout moment, même au milieu d’une manche.</p></div><span class="ccp-live"><i></i> SOPHIE À L’ÉCOUTE</span></div><div class="ccp-modes" role="group" aria-label="Mode de contrôle"><button type="button" data-control-mode="click"><b>⌖</b><span><strong>CLIC</strong><small>Souris / écran tactile</small></span></button><button type="button" data-control-mode="voice"><b>♫</b><span><strong>VOCAL</strong><small>Commandes à Sophie</small></span></button><button type="button" data-control-mode="hybrid"><b>◈</b><span><strong>HYBRIDE</strong><small>Clic et voix combinés</small></span></button></div><div class="ccp-voice"><div class="ccp-mic"><span class="ccp-mic-icon">🎙</span><div><strong>Commande vocale Sophie</strong><small data-casino-voice-status data-state="idle">Micro désactivé. Active-le pour parler à Sophie.</small></div></div><div class="ccp-voice-actions"><button type="button" class="casino-gold-btn" data-voice-start>Activer le micro</button><button type="button" class="casino-action" data-voice-stop disabled>Arrêter</button></div></div><details class="ccp-help"><summary>Voir les commandes vocales disponibles</summary><div class="ccp-command-grid"><span>« Ouvre le blackjack »</span><span>« Va à la roulette »</span><span>« Machine à sous »</span><span>« Lance les rouleaux »</span><span>« Tire une carte » / « Reste »</span><span>« Double la mise »</span><span>« Joueur suivant »</span><span>« Lance les dés »</span><span>« Tire une épreuve »</span><span>« Réussite » / « Je passe »</span><span>« Mise 50 »</span><span>« Répète les règles »</span><span>« Retour au salon »</span><span>« Coupe le son »</span><span>« Sophie, aide-moi »</span><span>« Arrête d’écouter »</span><span>« Je reste »</span><span>« Tire une carte »</span><span>« Mise sur le rouge »</span><span>« Numéro 17 »</span><span>« Continue la pyramide »</span><span>« Lance le dé du parcours »</span><span>« Révèle la réponse »</span><span>« Règles de la table »</span></div></details><div class="ccp-last" aria-live="polite"><span>DERNIÈRE COMMANDE</span><strong data-casino-last-command>En attente de ta voix…</strong></div></section>';
     const content=$('#casino-content',root);if(content)root.insertBefore(panel,content);else root.append(panel);
     updateMode(root);
   }
@@ -43,7 +43,7 @@
     voiceSupported=true;
     if(recognition)return true;
     recognition=new API();recognition.lang='fr-FR';recognition.continuous=true;recognition.interimResults=true;recognition.maxAlternatives=1;
-    recognition.onstart=()=>{listening=true;status('Je t’écoute. Parle naturellement, je m’occupe du reste.','live');updateMode();};
+    recognition.onstart=()=>{listening=true;status('Je t’écoute. Parle naturellement, je m’occupe du reste.','live');document.dispatchEvent(new CustomEvent('po:casino-listening',{detail:{active:true}}));updateMode();};
     recognition.onresult=e=>{
       let finalText='';
       for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0]?.transcript||'';if(e.results[i].isFinal)finalText+=t;}
@@ -55,7 +55,7 @@
       else if(e.error!=='aborted')status('Micro : '+e.error,'error');
       updateMode();
     };
-    recognition.onend=()=>{listening=false;updateMode();if(restart&&mode!=='click'){setTimeout(()=>{try{recognition.start();}catch{}},350);}else if(mode!=='click')status('Micro en pause. Réactive-le pour continuer.','idle');};
+    recognition.onend=()=>{listening=false;document.dispatchEvent(new CustomEvent('po:casino-listening',{detail:{active:false}}));updateMode();if(restart&&mode!=='click'&&!speechPaused){setTimeout(()=>{try{recognition.start();}catch{}},350);}else if(mode!=='click')status('Micro en pause. Réactive-le pour continuer.','idle');};
     return true;
   }
   function startListening(){
@@ -81,10 +81,11 @@
     const text=normal(raw);if(!text||commandBusy)return;
     commandBusy=true;setTimeout(()=>commandBusy=false,450);
     lastTranscript=raw;
+    if(window.PO_CASINO_HOST?.handle(raw)){const heard=$('[data-casino-last-command]');if(heard)heard.textContent='« '+raw+' »';return;}
     const last=$('[data-casino-last-command]');if(last)last.textContent='« '+raw+' »';
     status('Commande comprise : '+raw,'live');
     if(/\b(arrete|stop) (de )?m ecouter\b/.test(text)||text==='stop ecoute'){stopListening();say('Très bien, je coupe le micro.');return;}
-    if(text.includes('aide')||text.includes('commande vocale')){say('Tu peux me demander d’ouvrir un jeu, lancer les rouleaux, tirer une carte, rester, doubler, lancer les dés, passer au joueur suivant, tirer une épreuve, valider une réussite, changer la mise ou revenir au salon.');return;}
+    if(text.includes('aide')||text.includes('commande vocale')){say('Parle-moi naturellement. Au blackjack : tire, reste, double ou révèle la banque. À la roulette : mise sur le rouge, le noir, pair, impair ou le numéro 17. Aux dés : lance. Au Colonel : rouge, noir, plus haut, plus bas, pique, continue la pyramide ou lance le dé du parcours. Dans un jeu personnalisé : tire une épreuve, révèle la réponse, réussite ou je passe. Je mets le micro en pause quand je parle pour éviter de m’entendre moi-même.');return;}
     if((text.includes('repete')&&text.includes('regle'))||text==='les regles'){say('Blackjack : rapproche-toi de 21 sans dépasser. Roulette : choisis une mise et laisse tourner la bille. Machine à sous : aligne les symboles. Dés : le meilleur total gagne. Bataille : la carte la plus forte gagne. Dans tes jeux personnalisés, tire une épreuve et valide la réussite ou passe.');return;}
     const stake=text.match(/\b(?:mise|mise a|parie|pari)\s*(?:de\s*)?(\d+)\b/);if(stake){const n=Number(stake[1]);say(setStake(n)?'Mise réglée à '+n+' jetons fictifs.':'Je ne trouve pas de mise de '+n+' jetons sur cette table.');return;}
     if(text.includes('coupe le son')||text.includes('couper le son')||text.includes('silence musique')){if(!$('[data-audio-toggle]')?.textContent.includes('coupé'))click('[data-audio-toggle]');say('Le son est coupé. Enfin un peu de paix.');return;}
@@ -145,6 +146,12 @@
   observer.observe(document.documentElement,{childList:true,subtree:true});
   if($('#po-casino'))mount($('#po-casino'));
   document.addEventListener('click',e=>{if(e.target.closest('[data-casino-open]'))setTimeout(()=>{const root=$('#po-casino');if(root)mount(root);},30);});
+  document.addEventListener('po:casino-speaking',e=>{
+    const active=!!e.detail?.active;
+    speechPaused=active;
+    if(active&&recognition&&listening){try{recognition.stop();}catch{}}
+    else if(!active&&restart&&mode!=='click'&&recognition){setTimeout(()=>{try{recognition.start();}catch{}},300);}
+  });
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopListening();});
   window.addEventListener('pagehide',stopListening);
 })();

@@ -43,6 +43,7 @@
     if(new Set(names.map(x=>x.toLowerCase())).size!==names.length){say('Deux joueurs portent le même nom. Changez ça.');return;}
     const stake=Number(f.get('stake')||0);if(stake>0&&stake*names.length>(window.PO_CASINO?.account?.bankroll||1000)){say('La caisse ne peut pas couvrir cette mise.');return;}
     game={names,stake,mode:f.get('mode'),banter:f.has('banter'),phase:'predictions',turn:0,players:names.map(name=>({name,hand:[],predictions:[],misses:0,position:0,penalties:0,alive:true})),deck:[],pyramid:[],row:0,col:0,history:[],started:Date.now()};
+    try{const hp=JSON.parse(localStorage.getItem('po-casino-host-profile-v1')||'{}');const fx=hp.activeEffects||[];game.axeReroll=fx.includes('foam-axe');game.phantomShield=fx.includes('phantom');game.chaos=fx.includes('x9');game.smokeCover=fx.includes('smoke-prop');game.secretContract=fx.includes('case');hp.activeEffects=[];localStorage.setItem('po-casino-host-profile-v1',JSON.stringify(hp));}catch{}
     const st=read();st.plays++;persist(st);renderPrediction();say('Le Lord ferme la porte. Quatre prédictions vous attendent. '+names[0]+', à toi.');
   }
   function current(){return game.players[game.turn];}
@@ -70,10 +71,10 @@
     say('Les quatre cartes sont jouées. La pyramide se dévoile. Vous pouvez vous débarrasser des cartes de même valeur.');
   }
   function renderPyramid(msg=''){
-    const c=$('#casino-content'),p=current(),card=game.pyramid.slice(0,game.row+1).at(-1);
+    const c=$('#casino-content'),p=current(),card=game.pyramid.slice(0,game.row+1).at(-1),masked=!!game.smokeCover&&!game.smokeUsed;if(masked)game.smokeUsed=true;
     const rows=[1,2,3,4,5];let n=0,html='';
     rows.forEach((len,r)=>{html+='<div class="uc-pyramid-row">'+Array.from({length:len},()=>{const i=n++,revealed=i<game.row+1,cc=game.pyramid[i];return '<div class="uc-mini-card '+(revealed?(red(cc.suit)?'red':''):'hidden')+'">'+(revealed?cc.rank+cc.suit:'♛')+'</div>';}).join('')+'</div>';});
-    c.innerHTML=header('02 / 07','La pyramide des dettes')+'<div class="uc-panel"><div class="uc-pyramid">'+html+'</div><div class="uc-pyramid-current"><span>CARTE RÉVÉLÉE</span><b class="uc-mini-card '+(red(card.suit)?'red':'')+'">'+card.rank+card.suit+'</b><p>Tour de '+esc(p.name)+' · '+(game.row+1)+'/15</p></div><div class="uc-hand"><span>TA MAIN</span>'+p.hand.map((x,i)=>'<button class="uc-mini-card '+(red(x.suit)?'red':'')+'" data-uc-discard="'+i+'" title="Défausser cette carte">'+x.rank+x.suit+'</button>').join('')+(p.hand.length?'':'<em>Aucune carte en main</em>')+'</div><p class="uc-note">Défausse une carte de même valeur que la carte révélée. Si tu ne peux pas, pioche une carte de dette.</p><p class="uc-feedback">'+esc(msg)+'</p><button class="casino-gold-btn" data-uc="pyramid-next">Continuer la pyramide →</button></div><div class="uc-player-strip">'+game.players.map(x=>'<span>'+esc(x.name)+' · '+x.hand.length+' carte(s)</span>').join('')+'</div>';
+    c.innerHTML=header('02 / 07','La pyramide des dettes')+'<div class="uc-panel"><div class="uc-pyramid">'+html+'</div><div class="uc-pyramid-current"><span>CARTE RÉVÉLÉE</span><b class="uc-mini-card '+(masked?'hidden':red(card.suit)?'red':'')+'">'+(masked?'♛':card.rank+card.suit)+'</b><p>Tour de '+esc(p.name)+' · '+(game.row+1)+'/15</p></div><div class="uc-hand"><span>TA MAIN</span>'+p.hand.map((x,i)=>'<button class="uc-mini-card '+(red(x.suit)?'red':'')+'" data-uc-discard="'+i+'" title="Défausser cette carte">'+x.rank+x.suit+'</button>').join('')+(p.hand.length?'':'<em>Aucune carte en main</em>')+'</div><p class="uc-note">'+(masked?'La fumée de scène masque cette carte : tu dois jouer à l’aveugle.':'Défausse une carte de même valeur que la carte révélée. Si tu ne peux pas, pioche une carte de dette.')+'</p><p class="uc-feedback">'+esc(msg)+'</p><button class="casino-gold-btn" data-uc="pyramid-next">Continuer la pyramide →</button></div><div class="uc-player-strip">'+game.players.map(x=>'<span>'+esc(x.name)+' · '+x.hand.length+' carte(s)</span>').join('')+'</div>';
   }
   function discard(i){
     const p=current(),target=game.pyramid[game.row];if(p.hand[i]&&p.hand[i].rank===target.rank){p.hand.splice(i,1);say('Carte assortie. Tu effaces une dette.');renderPyramid('Bonne valeur : une carte en moins.');}else{say('Cette carte ne correspond pas. Essaie encore.');}
@@ -95,14 +96,29 @@
   function renderRoad(msg=''){
     game.phase='road';const p=current(),c=$('#casino-content'),pos=p.position;
     const milestones={1:'Départ',8:'Bus',15:'Accident',22:'Autoroute',29:'Péage',36:'Tentes',43:'Camp',50:'Corona',56:'Colonel'};const cells=Array.from({length:56},(_,i)=>{const n=i+1,player=game.players.filter(x=>x.position===n).map(x=>x.name).join(', '),milestone=milestones[n];return '<div class="uc-road-cell '+(n===pos?'current':'')+' '+(milestone?'milestone':'')+' '+(n%7===0?'event':'')+'" title="'+(milestone||('Case '+n))+'"><small>'+n+'</small><b>'+(n===56?'♛':milestone?'✦':'·')+'</b>'+(milestone?'<em>'+milestone+'</em>':'')+(player?'<i>'+esc(player)+'</i>':'')+'</div>';}).join('');
-    c.innerHTML=header('03–06 / 07','La route du Colonel')+'<div class="uc-road-info"><div><span>JOUEUR ACTIF</span><b>'+esc(p.name)+'</b></div><div><span>POSITION</span><b>'+pos+'/56</b></div><div><span>RÉPUTATION</span><b>'+p.penalties+' pt(s)</b></div></div><div class="uc-road-board">'+cells+'</div><div class="uc-panel"><p class="uc-feedback">'+esc(msg||'Lance le dé et découvre ce que la route te réserve.')+'</p><div class="uc-dice-display" id="uc-die">⚄</div><button class="casino-gold-btn" data-uc="roll-road">Lancer le dé</button><p class="uc-note">Cases spéciales tous les 7 emplacements. Arrivée au 56 : Le Colonel.</p></div><div class="uc-player-strip">'+game.players.map(x=>'<span>'+esc(x.name)+' · case '+x.position+'</span>').join('')+'</div>';
+    c.innerHTML=header('03–06 / 07','La route du Colonel')+'<div class="uc-road-info"><div><span>JOUEUR ACTIF</span><b>'+esc(p.name)+'</b></div><div><span>POSITION</span><b>'+pos+'/56</b></div><div><span>RÉPUTATION</span><b>'+p.penalties+' pt(s)</b></div></div><div class="uc-road-board">'+cells+'</div><div class="uc-panel"><p class="uc-feedback">'+esc(msg||'Lance le dé et découvre ce que la route te réserve.')+'</p><div class="uc-dice-display" id="uc-die">⚄</div><button class="casino-gold-btn" data-uc="roll-road">'+(game.lastRoadRoll?'Relancer le dé':'Lancer le dé')+'</button>'+(game.lastRoadRoll?'<button class="casino-action" data-uc="keep-road">Garder ce résultat</button>':'')+'<p class="uc-note">Cases spéciales tous les 7 emplacements. Arrivée au 56 : Le Colonel.</p></div><div class="uc-player-strip">'+game.players.map(x=>'<span>'+esc(x.name)+' · case '+x.position+'</span>').join('')+'</div>';
+  }
+  function nextRoadPlayer(p,msg=''){
+    if(p.position>=56){renderCorona(msg+' Tu atteins la dernière case. La Bataille de Corona commence.');say(msg+' '+p.name+', tu es arrivé. Dernière épreuve : la Bataille de Corona.');return;}
+    const idx=game.players.indexOf(p);let next=(idx+1)%game.players.length,loops=0;while(game.players[next].position>=56&&loops++<game.players.length)next=(next+1)%game.players.length;game.turn=next;renderRoad(msg);say(msg+' Au tour de '+game.players[next].name+'. Le Lord observe.');
+  }
+  function keepRoad(){
+    if(!game?.lastRoadRoll)return;const p=current();game.lastRoadRoll=null;game.axeReroll=false;nextRoadPlayer(p,'Tu conserves ton lancer. La route continue.');
   }
   function rollRoad(){
-    const p=current(),roll=1+Math.floor(Math.random()*6);p.position=Math.min(56,p.position+roll);let msg=p.name+' lance '+roll+' et arrive case '+p.position+'.';
-    const ev=p.position%7===0?pick(events):null;if(ev){msg+=' '+ev[0]+' — '+ev[1];p.penalties=Math.max(0,p.penalties+(ev[2]<0?1:ev[2]));p.position=Math.max(0,Math.min(56,p.position+ev[2]));}
+    const p=current(),saved=game.lastRoadRoll;
+    const oldPosition=saved?saved.oldPosition:p.position,oldPenalties=saved?saved.oldPenalties:p.penalties,oldShield=saved?saved.oldShield:game.phantomShield;
+    if(saved){p.position=oldPosition;p.penalties=oldPenalties;game.phantomShield=oldShield;}
+    const roll=1+Math.floor(Math.random()*6);p.position=Math.min(56,p.position+roll);let msg=p.name+' lance '+roll+' et arrive case '+p.position+'.';
+    const ev=p.position%7===0?pick(events):null;
+    if(ev){
+      if(ev[2]<0&&game.phantomShield){game.phantomShield=false;msg+=' Le bouclier Phantom absorbe la pénalité.';}
+      else {let delta=ev[2];if(game.chaos&&Math.random()<.35){delta=-delta;msg+=' Le mode Chaos inverse l’événement !';}msg+=' '+ev[0]+' — '+ev[1];p.penalties=Math.max(0,p.penalties+(delta<0?1:delta));p.position=Math.max(0,Math.min(56,p.position+delta));}
+    }
     const die=$('#uc-die');if(die)die.textContent=['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1];
-    if(p.position>=56){renderCorona(msg+' Tu atteins le dernier défi.');say(msg+' La Bataille de Corona commence.');return;}
-    const idx=game.players.indexOf(p);let next=(idx+1)%game.players.length;let loops=0;while(game.players[next].position>=56&&loops++<game.players.length)next=(next+1)%game.players.length;game.turn=next;renderRoad(msg);say(msg+(game.banter?' '+pick(taunts):''));
+    if(game.axeReroll&&!saved){game.lastRoadRoll={oldPosition,oldPenalties,oldShield};renderRoad(msg+' La hache en mousse te donne une relance : tu gardes ou tu relances ?');say(msg+' Tu as une relance grâce à ton accessoire de cinéma. Tu gardes ce résultat ou tu relances ?');return;}
+    if(saved){game.lastRoadRoll=null;game.axeReroll=false;}
+    nextRoadPlayer(p,msg);
   }
   function renderCorona(msg=''){
     game.phase='corona';const p=current();$('#casino-content').innerHTML=header('07 / 07','La Bataille de Corona')+'<div class="uc-corona"><div class="uc-corona-banner">CORONA · ÉPREUVE FINALE</div><h2>Un dernier face-à-face.</h2><p>'+esc(msg||'Chaque joueur lance deux dés. Le meilleur total obtient le titre de Colonel.')+'</p><div class="uc-player-strip">'+game.players.map((x,i)=>'<span>'+esc(x.name)+' · '+(x.finalRoll||'en attente')+'</span>').join('')+'</div><button class="casino-gold-btn" data-uc="corona-roll">Lancer les deux dés</button><div id="uc-corona-result"></div></div>';
@@ -125,10 +141,21 @@
     if(b.dataset.ucDiscard!==undefined){discard(Number(b.dataset.ucDiscard));return;}
     const a=b.dataset.uc;
     if(a==='setup')setup();if(a==='lord')setTab('lord');if(a==='back')setTab('colonel');
-    if(a==='pyramid-next')pyramidNext();if(a==='roll-road')rollRoad();if(a==='corona-roll')coronaRoll();if(a==='finish')finish();
+    if(a==='pyramid-next')pyramidNext();if(a==='roll-road')rollRoad();if(a==='keep-road')keepRoad();if(a==='corona-roll')coronaRoll();if(a==='finish')finish();
     if(a==='home')window.PO_CASINO?.open('lobby');
   }
   function mount(r){if(r.dataset.undergroundMounted)return;r.dataset.undergroundMounted='1';root=r;nav();r.addEventListener('click',click);r.addEventListener('submit',e=>{if(e.target.id==='uc-setup')start(e);});}
+  document.addEventListener('po:casino-item-use',e=>{
+    const id=e.detail?.id;if(!game)return;
+    try{const hp=JSON.parse(localStorage.getItem('po-casino-host-profile-v1')||'{}');hp.activeEffects=(hp.activeEffects||[]).filter(x=>x!==id);localStorage.setItem('po-casino-host-profile-v1',JSON.stringify(hp));}catch{}
+    if(id==='foam-axe'){game.axeReroll=true;say('La hache en mousse est prête. Ton prochain lancer de parcours pourra être relancé.');}
+    if(id==='phantom'){game.phantomShield=true;say('Le bouclier Phantom est actif. Il annulera la prochaine pénalité du parcours.');}
+    if(id==='x9'){game.chaos=true;say('Mode Chaos activé. Certains événements du parcours peuvent s’inverser.');}
+    if(id==='smoke-prop'){game.smokeCover=true;say('La fumée de scène masque le prochain indice. Le croupier ne voit plus rien.');}
+    if(id==='case'){game.secretContract=true;say('La mallette contient un contrat secret. Le Lord te surveille désormais de plus près.');}
+    if(id==='radio'){say('Message intercepté : « Le bus ne s’arrête jamais deux fois au même endroit. »');}
+    if(game.phase==='road')renderRoad();
+  });
   const obs=new MutationObserver(()=>{const r=$('#po-casino');if(r&&!r.dataset.undergroundMounted)mount(r);});
   obs.observe(document.body,{childList:true,subtree:true});if($('#po-casino'))mount($('#po-casino'));
   document.addEventListener('click',e=>{if(e.target.closest('[data-casino-open]'))setTimeout(()=>{const r=$('#po-casino');if(r&&!r.dataset.undergroundMounted)mount(r);},0);});
