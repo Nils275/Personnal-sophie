@@ -38,7 +38,7 @@ import { Bus } from './core.js';
     const el=document.createElement('section');el.id='casino-host-stage';el.className='chs-stage';el.innerHTML=
       '<div class="chs-scene"><div class="chs-scene-top"><span class="chs-live"><i></i> BLACK ROOM · EN DIRECT</span><span class="chs-room">TABLE PRIVÉE 01</span></div>'+
       '<div class="chs-dealer">'+avatar('idle')+'<div class="chs-dealer-glow"></div><div class="chs-nameplate"><b>SOPHIE</b><span>MAÎTRESSE DE CÉRÉMONIE</span></div></div>'+
-      '<div class="chs-dialogue"><span class="chs-dialogue-label">SOPHIE · '+(TTS.status().active==='elevenlabs'?'ELEVENLABS':'VOIX')+'</span><p data-host-speech>« Le Lord vous souhaite une mauvaise soirée. Installez-vous. »</p><div class="chs-dialogue-meta"><span data-host-state>En attente de la table</span><span data-host-provider>Voix : '+esc(TTS.status().mode)+'</span></div></div></div>'+
+      '<div class="chs-dialogue"><span class="chs-dialogue-label">SOPHIE · '+(TTS.status().active==='elevenlabs'?'ELEVENLABS':'VOIX')+'</span><p data-host-speech>« '+esc(lastSpeech||'Le Lord vous souhaite une mauvaise soirée. Installez-vous.')+' »</p><div class="chs-dialogue-meta"><span data-host-state>En attente de la table</span><span data-host-provider>Voix : '+esc(TTS.status().mode)+'</span></div></div></div>'+
       '<div class="chs-side"><div class="chs-tabs"><button data-host-tab="dealer" class="active">La salle</button><button data-host-tab="dossier">Dossier noir</button><button data-host-tab="missions">Missions</button></div>'+
       '<div class="chs-content" data-host-content></div></div>';
     const content=$('#casino-content',root);if(content)root.insertBefore(el,content);else root.append(el);stage=el;renderTab();
@@ -74,10 +74,10 @@ import { Bus } from './core.js';
     if(t.includes('bataille'))return {id:'highcard',label:'Bataille de cartes',detail:'La main va être révélée'};
     return {id:'lobby',label:'Salon principal',detail:'Choisis une table pour commencer'};
   }
-  function logConversation(role,text){conversation.push({role,text:String(text||'')});if(conversation.length>30)conversation=conversation.slice(-30);const box=$('[data-host-conversation]',stage);if(box){box.innerHTML=conversation.slice(-5).map(m=>'<div class="'+m.role+'"><small>'+(m.role==='sophie'?'SOPHIE':'JOUEUR')+'</small><span>'+esc(m.text)+'</span></div>').join('');box.scrollTop=box.scrollHeight;}}
+  function logConversation(role,text){conversation.push({role,text:String(text||'')});if(conversation.length>30)conversation=conversation.slice(-30);if(!stage)return;const box=$('[data-host-conversation]',stage);if(box){box.innerHTML=conversation.slice(-5).map(m=>'<div class="'+m.role+'"><small>'+(m.role==='sophie'?'SOPHIE':'JOUEUR')+'</small><span>'+esc(m.text)+'</span></div>').join('');box.scrollTop=box.scrollHeight;}}
   function setAvatar(state){const a=$('.sophie-avatar',stage);if(a){a.classList.remove('state-idle','state-listening','state-thinking','state-speaking');a.classList.add('state-'+state);}const label=$('[data-host-state]',stage);if(label)label.textContent=({idle:'En attente',listening:'Je t’écoute',thinking:'Je réfléchis',speaking:'Je parle'}[state]||state);}
   function onSpeak(text){
-    if(!stage)return;lastSpeech=String(text);logConversation('sophie',lastSpeech);const p=$('[data-host-speech]',stage);if(p)p.textContent='« '+lastSpeech+' »';
+    lastSpeech=String(text);logConversation('sophie',lastSpeech);if(!stage)return;const p=$('[data-host-speech]',stage);if(p)p.textContent='« '+lastSpeech+' »';
     const provider=TTS.status();const v=$('[data-host-provider]',stage);if(v)v.textContent='Voix : '+provider.active+' · '+provider.mode;
     const voiceEnabled=$('#casino-voice',root)?.checked!==false;if(voiceEnabled)document.dispatchEvent(new CustomEvent('po:casino-speaking',{detail:{active:true}}));setAvatar(voiceEnabled?'speaking':'idle');clearTimeout(speakingTimer);speakingTimer=setTimeout(()=>{setAvatar('idle');if(voiceEnabled)document.dispatchEvent(new CustomEvent('po:casino-speaking',{detail:{active:false}}));},Math.min(12000,Math.max(2200,lastSpeech.length*62)));
   }
@@ -159,6 +159,10 @@ import { Bus } from './core.js';
   function listen(){
     const b=$('[data-voice-start]');if(b)b.click();else say('Active le micro dans le panneau de commande vocale.');
   }
+  function installSayWrapper(){
+    const api=window.PO_CASINO,original=api?.say;
+    if(original&&!api.__hostWrapped){api.say=(text)=>{const out=original(text);onSpeak(text);return out;};api.__hostWrapped=true;}
+  }
   function mount(){
     root=$('#po-casino');if(!root)return;inject();
     if(root.dataset.hostBound)return;root.dataset.hostBound='1';
@@ -174,11 +178,11 @@ import { Bus } from './core.js';
       const gameObserver=new MutationObserver(()=>{if(activeTab==='dealer'){const now=$('[data-host-content]',stage)?.querySelector('.chs-now b');if(now){const g=detectGame();now.textContent=g.label;const small=now.nextElementSibling;if(small)small.textContent=g.detail;}}});
       gameObserver.observe(gameContent,{childList:true,subtree:true,characterData:true});
     }
-    const original=window.PO_CASINO?.say;
-    if(original&&!window.PO_CASINO.__hostWrapped){window.PO_CASINO.say=(text)=>{const out=original(text);onSpeak(text);return out;};window.PO_CASINO.__hostWrapped=true;}
+    installSayWrapper();
     root.addEventListener('click',e=>{if(e.target.closest('[data-casino-tab],[data-casino-extra],[data-underground],[data-cx],[data-bj],[data-roulette-spin]'))setTimeout(()=>{if(activeTab==='dealer')renderTab();},80);});
   }
   Bus.on('tts:provider',e=>{const v=$('[data-host-provider]',stage);if(v)v.textContent='Voix active : '+(e?.provider==='elevenlabs'?'ElevenLabs · Sophie':'voix native');});
+  installSayWrapper();
   window.PO_CASINO_HOST={handle,refresh:renderTab,get profile(){return {...profile};},mission:newMission};
   const observer=new MutationObserver(()=>mount());observer.observe(document.documentElement,{childList:true,subtree:true});if($('#po-casino'))mount();
   document.addEventListener('po:casino-voice',e=>handle(e.detail?.text||''));
