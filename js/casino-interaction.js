@@ -106,8 +106,8 @@
     const ucChoice=text.match(/^(rouge|noir|plus haut|plus bas|interieur|exterieur|pique|coeur|carreau|trefle)$/);
     if(ucChoice){const map={'pique':'♠','coeur':'♥','carreau':'♦','trefle':'♣'};const val=map[ucChoice[1]]||ucChoice[1].replace(/^./,c=>c.toUpperCase());const b=[...document.querySelectorAll('[data-uc-choice]')].find(x=>normal(x.dataset.ucChoice)===normal(val));if(b){b.click();say('Choix validé.');return;}}
     const actions=[
-      [/(continue la pyramide|carte suivante|passe a la pyramide)/,'[data-uc="pyramid-next"]','La pyramide continue.'],
-      [/(lance le de|lance le dé|avance)/,'[data-uc="roll-road"]','Le dé roule.'],
+      [/(continue la pyramide|passe a la pyramide)/,'[data-uc="pyramid-next"]','La pyramide continue.'],
+      [/(lance le de du parcours|lance le dé de la route)/,'[data-uc="roll-road"]','Le dé roule.'],
       [/(lance les deux des|bataille de corona)/,'[data-uc="corona-roll"]','Dernière épreuve.'],
       [/(titre de colonel|je suis le colonel)/,'[data-uc="finish"]','Le titre est attribué.'],
       [/(lance les rouleaux|fais tourner|lance la machine|spin)/,'[data-cx="slot-spin"]','Rouleaux lancés.'],
