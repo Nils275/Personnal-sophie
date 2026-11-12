@@ -85,10 +85,10 @@
     status('Commande comprise : '+raw,'live');
     if(/\b(arrete|stop) (de )?m ecouter\b/.test(text)||text==='stop ecoute'){stopListening();say('Très bien, je coupe le micro.');return;}
     if(text.includes('aide')||text.includes('commande vocale')){say('Tu peux me demander d’ouvrir un jeu, lancer les rouleaux, tirer une carte, rester, doubler, lancer les dés, passer au joueur suivant, tirer une épreuve, valider une réussite, changer la mise ou revenir au salon.');return;}
-    if(text.includes('repete')&&text.includes('regle')||text==='les regles'){say('Blackjack : rapproche-toi de 21 sans dépasser. Roulette : choisis une mise et laisse tourner la bille. Machine à sous : aligne les symboles. Dés : le meilleur total gagne. Bataille : la carte la plus forte gagne. Dans tes jeux personnalisés, tire une épreuve et valide la réussite ou passe.');return;}
+    if((text.includes('repete')&&text.includes('regle'))||text==='les regles'){say('Blackjack : rapproche-toi de 21 sans dépasser. Roulette : choisis une mise et laisse tourner la bille. Machine à sous : aligne les symboles. Dés : le meilleur total gagne. Bataille : la carte la plus forte gagne. Dans tes jeux personnalisés, tire une épreuve et valide la réussite ou passe.');return;}
     const stake=text.match(/\b(?:mise|mise a|parie|pari)\s*(?:de\s*)?(\d+)\b/);if(stake){const n=Number(stake[1]);say(setStake(n)?'Mise réglée à '+n+' jetons fictifs.':'Je ne trouve pas de mise de '+n+' jetons sur cette table.');return;}
-    if(text.includes('coupe le son')||text.includes('couper le son')||text.includes('silence musique')){click('[data-audio-toggle]');say('Le son est coupé. Enfin un peu de paix.');return;}
-    if(text.includes('active le son')||text.includes('remets le son')||text.includes('musique')){if($('[data-audio-toggle]')?.textContent.includes('coupé'))click('[data-audio-toggle]');say('Ambiance rétablie. Le suspense reprend.');return;}
+    if(text.includes('coupe le son')||text.includes('couper le son')||text.includes('silence musique')){if(!$('[data-audio-toggle]')?.textContent.includes('coupé'))click('[data-audio-toggle]');say('Le son est coupé. Enfin un peu de paix.');return;}
+    if(text.includes('active le son')||text.includes('remets le son')||text==='musique'){if($('[data-audio-toggle]')?.textContent.includes('coupé'))click('[data-audio-toggle]');say('Ambiance rétablie. Le suspense reprend.');return;}
     const routes=[
       [/(blackjack|vingt et un)/,'[data-casino-tab="blackjack"]','Blackjack, c’est parti. Essaie de ne pas offrir ton portefeuille à la banque.'],
       [/(roulette)/,'[data-casino-tab="roulette"]','La roulette est ouverte. Fais tes jeux.'],
@@ -102,6 +102,8 @@
     const actions=[
       [/(lance les rouleaux|fais tourner|lance la machine|spin)/,'[data-cx="slot-spin"]','Rouleaux lancés.'],
       [/(lance les des|lancer les des|roule les des)/,'[data-cx="dice-roll"]','Les dés sont lancés.'],
+      [/(installe la table|demarre la partie|lance la partie)/,'[data-cx="dice-start"],[data-cx="high-start"]','La table est prête.'],
+      [/(tourne la roulette|lance la roulette)/,'[data-roulette-spin]','La bille est lancée.'],
       [/(joueur suivant|a toi|suivant)/,'[data-cx="dice-next"],[data-cx="custom-next"],[data-bj="next"]','Au suivant.'],
       [/(tirer une epreuve|nouvelle epreuve|donne moi un defi|pioche un defi)/,'[data-cx="custom-draw"]','Nouvelle épreuve. À toi de jouer.'],
       [/(reussite|defi reussi|j ai reussi)/,'[data-cx="custom-good"]','Je note la réussite. Ne prends pas trop la confiance.'],
