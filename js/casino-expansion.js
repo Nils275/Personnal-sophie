@@ -216,7 +216,7 @@
   function nextCustom(success){
     const g=extraState.game,p=extraState.names[extraState.turn];clearInterval(customTimer);customTimer=null;
     if(success)extraState.scores[p]+=g.points;
-    extraState.roundsPlayed[p]++;extraState.current=null;
+    extraState.roundsPlayed[p]++;extraState.current=null;extraState.answer=null;extraState.answerRevealed=false;
     let next=extraState.turn;for(let k=1;k<=extraState.names.length;k++){const candidate=(extraState.turn+k)%extraState.names.length;if(extraState.roundsPlayed[extraState.names[candidate]]<(g.rounds||5)){next=candidate;break;}}
     extraState.turn=next;
     const finished=extraState.names.every(n=>extraState.roundsPlayed[n]>=(g.rounds||5));
@@ -247,6 +247,7 @@
       if(a==='creator')renderCreator();
       if(a==='custom-list')renderCustomList();
       if(a==='custom-draw')drawCustom();
+      if(a==='custom-answer'&&extraState.answer){extraState.answerRevealed=true;renderCustomGame();say('La réponse attendue était : '+extraState.answer);}
       if(a==='custom-good')nextCustom(true);
       if(a==='custom-pass')nextCustom(false);
       if(a==='custom-next'){extraState.current=null;extraState.turn=(extraState.turn+1)%extraState.names.length;renderCustomGame();}
