@@ -18,7 +18,7 @@
   function nav(){
     const n=$('.casino-nav');if(!n||n.dataset.colonelReady)return;n.dataset.colonelReady='1';
     const sp=n.querySelector('.casino-nav-spacer');
-    [['colonel','Le Colonel'],['lord','Le Lord']].forEach(([id,label])=>{const b=document.createElement('button');b.type='button';b.dataset-underground=id;b.dataset.underground=id;b.textContent=label;sp?n.insertBefore(b,sp):n.append(b);});
+    [['colonel','Le Colonel'],['lord','Le Lord']].forEach(([id,label])=>{const b=document.createElement('button');b.type='button';b.dataset.underground=id;b.textContent=label;sp?n.insertBefore(b,sp):n.append(b);});
   }
   function shell(){return '<section class="uc-page"><header class="uc-heading"><div><span class="casino-eyebrow">THE BLACK ROOM · ACCÈS NON PUBLIC</span><h1>LE <em>COLONEL</em></h1><p>Un jeu de cartes, une pyramide, une route de l’enfer et une dernière épreuve. Le Lord observe. Sophie commente.</p></div><div class="uc-stamp">MEMBRE<br><b>NON AUTORISÉ</b><br>PARFAIT.</div></header>';}
   function setTab(id){
@@ -49,8 +49,8 @@
   function header(phase,sub){return shell()+'<div class="uc-gamebar"><span>PARTIE SCELLÉE · '+game.players.length+' JOUEURS</span><span>ÉTAPE '+phase+'</span><span>MISE '+game.stake+' JETONS</span></div><h2 class="uc-phase-title">'+sub+'</h2>';}
   const prompts=[
     {q:'Carte 1 · Rouge ou noir ?',opts:['Rouge','Noir'],test:c=>red(c.suit)?'Rouge':'Noir'},
-    {q:'Carte 2 · Plus haut ou plus bas ?',opts:['Plus haut','Plus bas'],test:(c,p)=>value(c)>value(p[0])?'Plus haut':'Plus bas'},
-    {q:'Carte 3 · Intérieur ou extérieur ?',opts:['Intérieur','Extérieur'],test:(c,p)=>{const a=Math.min(value(p[0]),value(p[1])),b=Math.max(value(p[0]),value(p[1]));return value(c)>a&&value(c)<b?'Intérieur':'Extérieur';}},
+    {q:'Carte 2 · Plus haut ou plus bas ?',opts:['Plus haut','Plus bas'],test:(c,p)=>value(c)>value(p[0].card)?'Plus haut':'Plus bas'},
+    {q:'Carte 3 · Intérieur ou extérieur ?',opts:['Intérieur','Extérieur'],test:(c,p)=>{const a=Math.min(value(p[0].card),value(p[1].card)),b=Math.max(value(p[0]),value(p[1]));return value(c)>a&&value(c)<b?'Intérieur':'Extérieur';}},
     {q:'Carte 4 · Quel symbole ?',opts:suits,test:c=>c.suit}
   ];
   function renderPrediction(msg=''){
