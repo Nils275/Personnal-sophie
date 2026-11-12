@@ -3,7 +3,7 @@
   'use strict';
   const KEY='po-casino-control-mode-v1';
   const readMode=()=>{try{return localStorage.getItem(KEY)||'hybrid';}catch{return 'hybrid';}};
-  let mode=readMode(),recognition=null,listening=false,restart=false,speechPaused=false,voiceSupported=false,lastTranscript='',commandBusy=false;
+  let mode=readMode(),recognition=null,listening=false,restart=false,speechPaused=false,voiceSupported=false,lastTranscript='',commandBusy=false,autoTurnMode=false,armingPermission=false;
   const $=(s,r=document)=>r.querySelector(s);
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const normal=s=>String(s||'').toLocaleLowerCase('fr-FR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
@@ -43,14 +43,14 @@
     voiceSupported=true;
     if(recognition)return true;
     recognition=new API();recognition.lang='fr-FR';recognition.continuous=true;recognition.interimResults=true;recognition.maxAlternatives=1;
-    recognition.onstart=()=>{listening=true;status('Je t’écoute. Parle naturellement, je m’occupe du reste.','live');document.dispatchEvent(new CustomEvent('po:casino-listening',{detail:{active:true}}));updateMode();};
+    recognition.onstart=()=>{listening=true;status('Je t’écoute. Parle naturellement, je m’occupe du reste.','live');document.dispatchEvent(new CustomEvent('po:casino-listening',{detail:{active:true}}));updateMode();if(armingPermission){armingPermission=false;document.dispatchEvent(new CustomEvent('po:mecreants-mic-ready'));setTimeout(()=>stopListening(),700);}};
     recognition.onresult=e=>{
       let finalText='';
       for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0]?.transcript||'';if(e.results[i].isFinal)finalText+=t;}
       if(finalText.trim())handleVoice(finalText.trim());
     };
     recognition.onerror=e=>{
-      if(e.error==='not-allowed'||e.error==='service-not-allowed'){restart=false;listening=false;status('Accès au micro refusé. Autorise le microphone dans les paramètres du navigateur.','error');}
+      if(e.error==='not-allowed'||e.error==='service-not-allowed'){restart=false;autoTurnMode=false;listening=false;status('Accès au micro refusé. Autorise le microphone dans les paramètres du navigateur.','error');}
       else if(e.error==='no-speech')status('Je n’ai rien entendu. Tu peux réessayer.','warning');
       else if(e.error!=='aborted')status('Micro : '+e.error,'error');
       updateMode();
@@ -79,6 +79,7 @@
   }
   function handleVoice(raw){
     const text=normal(raw);if(!text||commandBusy)return;
+    if(window.PO_MECREANTS?.isActive?.()&&window.PO_MECREANTS.handleVoice(raw)){const heard=$('[data-casino-last-command]');if(heard)heard.textContent='« '+raw+' »';return;}
     commandBusy=true;setTimeout(()=>commandBusy=false,450);
     lastTranscript=raw;
     if(window.PO_CASINO_HOST?.handle(raw)){const heard=$('[data-casino-last-command]');if(heard)heard.textContent='« '+raw+' »';return;}
@@ -142,6 +143,8 @@
       if(e.target.closest('[data-voice-stop]')){stopListening();status('Micro arrêté.','idle');say('Je ne t’écoute plus.');}
     });
   }
+  window.PO_CASINO_VOICE={arm(){autoTurnMode=true;armingPermission=true;startListening();},startForTurn(){if(autoTurnMode&&mode!=='click')startListening();},stop:stopListening,get armed(){return autoTurnMode;},get listening(){return listening;}};
+  document.addEventListener('po:mecreants-mic',e=>{if(e.detail?.active)window.PO_CASINO_VOICE.startForTurn();else stopListening();});
   const observer=new MutationObserver(()=>{const root=$('#po-casino');if(root)mount(root);});
   observer.observe(document.documentElement,{childList:true,subtree:true});
   if($('#po-casino'))mount($('#po-casino'));
