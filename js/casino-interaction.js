@@ -73,7 +73,7 @@
     const b=$(selector);if(b&&!b.disabled){b.click();return true;}return false;
   }
   function setStake(amount){
-    const selects=['#cx-slot-stake','#cx-dice-stake','#cx-high-stake','#casino-default-bet','#casino-roulette-stake'];
+    const selects=['#cx-slot-stake','#cx-dice-stake','#cx-high-stake','#casino-default-bet','#roulette-stake'];
     for(const s of selects){const el=$(s);if(el){const opt=[...el.options].find(o=>Number(o.value||o.textContent)===amount);if(opt){el.value=opt.value;el.dispatchEvent(new Event('change',{bubbles:true}));return true;}}}
     return false;
   }
@@ -99,6 +99,8 @@
       [/(ma ludotheque|mes jeux)/,'[data-cx="custom-list"]','Voici ta ludothèque.']
     ];
     for(const [re,sel,response] of routes){if(re.test(text)){if(click(sel)){say(response);return;}}}
+    const roulettePick=text.match(/(?:numero|numéro)\s*(\d{1,2})/);if(roulettePick){const n=Number(roulettePick[1]);if(n>=0&&n<=36&&click('[data-roulette-pick="'+n+'"]')){say('Tu mises sur le '+n+'.');return;}}
+    const rouletteType=[['rouge','red'],['noir','black'],['pair','even'],['impair','odd'],['bas','low'],['haut','high']].find(([word])=>text.includes('mise sur le '+word)||text==='parie '+word);if(rouletteType){if(click('[data-roulette-type="'+rouletteType[1]+'"]')){say('Pari '+rouletteType[0]+' sélectionné.');return;}}
     const actions=[
       [/(lance les rouleaux|fais tourner|lance la machine|spin)/,'[data-cx="slot-spin"]','Rouleaux lancés.'],
       [/(lance les des|lancer les des|roule les des)/,'[data-cx="dice-roll"]','Les dés sont lancés.'],
@@ -114,10 +116,11 @@
       [/(je reste|rester|stand)/,'[data-bj="stand"]','Tu restes. Voyons si c’était intelligent.'],
       [/(double la mise|doubler)/,'[data-bj="double"]','Tu doubles. Il fallait oser.'],
       [/(revele la banque|montre la banque)/,'[data-bj="settle"]','Je révèle ma main.'],
+      [/(lance la partie|demarre la partie|valide la table)/,'#casino-setup-form','La partie commence.'],
       [/(retour au salon|accueil|quitter la table)/,'[data-cx="home"]','Retour au salon. La maison ne ferme jamais.']
     ];
-    for(const [re,sel,response] of actions){if(re.test(text)){const selectors=sel.split(',');for(const s of selectors){if(click(s)){say(response);return;}}say('Je comprends la commande, mais cette action n’est pas disponible à cette étape.');return;}}
-    const players=text.match(/\bjoueurs?\s+(.+)/);if(players){const names=players[1].split(/\s+et\s+|,| puis /).map(x=>x.trim()).filter(Boolean);const input=$('#cx-dice-players')||$('#cx-high-players');if(input){input.value=names.join(', ');say('J’ai inscrit '+names.join(' et ')+'.');return;}}
+    for(const [re,sel,response] of actions){if(re.test(text)){if(sel==='#casino-setup-form'){const form=$(sel);if(form){form.requestSubmit();say(response);return;}}const selectors=sel.split(',');for(const s of selectors){if(click(s)){say(response);return;}}say('Je comprends la commande, mais cette action n’est pas disponible à cette étape.');return;}}
+    const players=text.match(/\bjoueurs?\s+(.+)/);if(players){const names=players[1].split(/\s+et\s+|,| puis /).map(x=>x.trim()).filter(Boolean);const input=$('#cx-dice-players')||$('#cx-high-players');if(input){input.value=names.join(', ');say('J’ai inscrit '+names.join(' et ')+'.');return;}const count=$('#casino-player-count');if(count){count.value=String(Math.max(1,Math.min(6,names.length)));count.dispatchEvent(new Event('change',{bubbles:true}));names.forEach((name,i)=>{const field=$('[name="player'+(i+1)+'"]');if(field)field.value=name.slice(0,18);});say('J’ai préparé la table pour '+names.join(' et ')+'. Dis « lance la partie » quand tu es prêt.');return;}}
     say('Je n’ai pas compris « '+raw+' ». Dis « aide » pour entendre les commandes possibles.');
   }
   function mount(root){
