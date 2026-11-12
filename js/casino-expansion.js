@@ -1,5 +1,3 @@
-import { TTS } from './tts.js';
-
 (() => {
   'use strict';
   const $ = (s, r=document) => r.querySelector(s);
@@ -18,10 +16,7 @@ import { TTS } from './tts.js';
     if (!window.PO_CASINO?.transact) return false;
     return window.PO_CASINO.transact(stake, payout, outcome);
   };
-  const say = text => {
-    window.PO_CASINO?.say(text);
-    if (audioPrefs.voice) { try { TTS.speak(text, {force:true}); } catch (e) { console.warn('[Casino] Voix indisponible',e); } }
-  };
+  const say = text => window.PO_CASINO?.say(text);
   const playTone = (freq=440, duration=.12, type='triangle', volume=.15) => {
     if (!audioPrefs.fx || !audio) return;
     try {
@@ -57,6 +52,7 @@ import { TTS } from './tts.js';
     const fx=$('[data-audio-fx]');if(fx)fx.value=audioPrefs.fxVolume;
     const fxBtn=$('[data-audio-fx-toggle]');if(fxBtn)fxBtn.textContent=audioPrefs.fx?'Effets ON':'Effets OFF';
     const voiceBtn=$('[data-audio-voice-toggle]');if(voiceBtn)voiceBtn.textContent=audioPrefs.voice?'Sophie ON':'Sophie OFF';
+    const voiceCheck=$('#casino-voice');if(voiceCheck)voiceCheck.checked=audioPrefs.voice;
     try{localStorage.setItem(AUDIO_KEY,JSON.stringify(audioPrefs));}catch{}
   }
   function soundSettings(){
@@ -75,15 +71,15 @@ import { TTS } from './tts.js';
     soundSettings();
   }
   const gameCards = [
-    ['slots','🎰','MACHINE À SOUS','Jackpot, rouleaux animés et gains fictifs.'],
-    ['dice','🎲','DÉS CLANDESTINS','Défi de dés entre 2 et 6 joueurs.'],
-    ['highcard','🂡','BATAILLE','Une carte chacun : la plus forte remporte le pot.'],
-    ['creator','✎','CRÉER UN JEU','Conçois tes propres règles, défis et questions.']
+    ['slots','🎰','MACHINE À SOUS','Midnight Jackpot','Jackpot, rouleaux animés et gains fictifs.'],
+    ['dice','🎲','DÉS CLANDESTINS','Les dés du sous-sol','Défi de dés entre 2 et 6 joueurs.'],
+    ['highcard','🂡','BATAILLE','La bataille','Une carte chacun : la plus forte remporte le pot.'],
+    ['creator','✎','CRÉER UN JEU','Atelier de création','Conçois tes propres règles, défis et questions.']
   ];
   function addLobbyCards(){
     const content=$('#casino-content');if(!content||content.querySelector('[data-extra-lobby]'))return;
     const section=document.createElement('section');section.className='casino-section casino-extra-lobby';section.dataset.extraLobby='';
-    section.innerHTML='<div class="casino-section-head"><div><span class="casino-eyebrow">LES NOUVELLES TABLES</span><h3>La salle clandestine</h3></div><span class="casino-live">● 4 TABLES DISPONIBLES</span></div><div class="casino-games">'+gameCards.map(([id,icon,tag,desc])=>'<article class="casino-game-card casino-extra-card"><div class="game-symbol">'+icon+'</div><span class="casino-tag">'+tag+'</span><h4>'+tag.replace(/^[A-ZÀ-Ü ]+$/,'').trim()+'</h4><p>'+desc+'</p><button type="button" data-casino-extra="'+id+'">Entrer à la table <b>→</b></button></article>').join('')+'</div><div class="casino-custom-shortcut"><div><small>ATELIER DU CASINO</small><strong>Les règles sont faites pour être détournées.</strong><p>Crée une partie sur mesure et invite les joueurs autour de l’écran.</p></div><button type="button" data-casino-extra="creator">Créer mon jeu ↗</button></div>';
+    section.innerHTML='<div class="casino-section-head"><div><span class="casino-eyebrow">LES NOUVELLES TABLES</span><h3>La salle clandestine</h3></div><span class="casino-live">● 4 TABLES DISPONIBLES</span></div><div class="casino-games">'+gameCards.map(([id,icon,tag,title,desc])=>'<article class="casino-game-card casino-extra-card"><div class="game-symbol">'+icon+'</div><span class="casino-tag">'+tag+'</span><h4>'+title+'</h4><p>'+desc+'</p><button type="button" data-casino-extra="'+id+'">Entrer à la table <b>→</b></button></article>').join('')+'</div><div class="casino-custom-shortcut"><div><small>ATELIER DU CASINO</small><strong>Les règles sont faites pour être détournées.</strong><p>Crée une partie sur mesure et invite les joueurs autour de l’écran.</p></div><button type="button" data-casino-extra="creator">Créer mon jeu ↗</button></div>';
     content.append(section);
   }
   function setExtraTab(id){
@@ -214,6 +210,7 @@ import { TTS } from './tts.js';
   }
   function onExtraClick(e){
     const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.casinoTab==='lobby'){activeExtra='lobby';return;}
     if(b.dataset.casinoExtra){e.preventDefault();e.stopPropagation();startAudio();setExtraTab(b.dataset.casinoExtra);return;}
     if(b.dataset.cx){
       const a=b.dataset.cx;
@@ -244,7 +241,7 @@ import { TTS } from './tts.js';
     if(root.dataset.expansionMounted)return;root.dataset.expansionMounted='1';
     injectTabs();root.addEventListener('click',onExtraClick);root.addEventListener('submit',onExtraSubmit);root.addEventListener('change',onExtraChange);
     root.addEventListener('click',e=>{if(e.target.matches('[data-audio-toggle]')){audioPrefs.muted=!audioPrefs.muted;startAudio();applyAudio();}if(e.target.matches('[data-audio-fx-toggle]')){audioPrefs.fx=!audioPrefs.fx;applyAudio();}if(e.target.matches('[data-audio-voice-toggle]')){audioPrefs.voice=!audioPrefs.voice;applyAudio();}});
-    root.addEventListener('click',()=>{if(!audioStarted&&!audioPrefs.muted)startAudio();},{capture:true});
+    root.addEventListener('click',e=>{if(!audioStarted&&!audioPrefs.muted)startAudio();const target=e.target.closest('[data-bj],[data-roulette-spin]');if(target)playTone(target.dataset.bj==='settle'?520:target.dataset.bj?330:240,.09);},{capture:true});
     const content=$('#casino-content');if(content)new MutationObserver(()=>{if(activeExtra==='lobby')addLobbyCards();}).observe(content,{childList:true});
     addLobbyCards();
   }
