@@ -20,6 +20,8 @@
   <link rel="stylesheet" href="modes-games.css">
   <link rel="stylesheet" href="casino.css">
   <link rel="stylesheet" href="security.css">
+  <link rel="stylesheet" href="casino-expansion.css">
+  <link rel="stylesheet" href="light-mode.css">
   <style>html{background:#080D12;color:#EAF3F4}body{margin:0}.boot-fallback{min-height:100vh;display:grid;place-items:center;font-family:system-ui;background:#080D12}.boot-fallback span{color:#37D6A0}</style>
 </head>
 <body>
@@ -186,7 +188,7 @@
       var modules = ['./js/core.js', './js/ui.js', './js/view-state.js', './js/tts.js', './js/news.js',
         './js/alarms.js', './js/focus.js', './js/reminders.js', './js/sophie.js', './js/voice.js',
         './js/views.js', './js/views-primary.js', './js/views-operations.js', './js/views-reminders.js',
-        './js/camera.js', './js/maison-hub.js', './js/views-maison.js'];
+        './js/camera.js', './js/maison-hub.js', './js/views-maison.js', './js/casino-expansion.js'];
       var failed = [];
       for (var i = 0; i < modules.length; i++) {
         try { await import(modules[i]); }
@@ -208,6 +210,7 @@
   <script type="module" src="mosaic.js"></script>
   <script type="module" src="js/games.js"></script>
   <script type="module" src="casino.js"></script>
+  <script type="module" src="js/casino-expansion.js"></script>
   <script type="module" src="script.js"></script>
 </body>
 </html>
