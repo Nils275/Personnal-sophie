@@ -103,8 +103,9 @@
     for(const [re,sel,response] of routes){if(re.test(text)){if(click(sel)){say(response);return;}}}
     const roulettePick=text.match(/(?:numero|numéro)\s*(\d{1,2})/);if(roulettePick){const n=Number(roulettePick[1]);if(n>=0&&n<=36&&click('[data-roulette-pick="'+n+'"]')){say('Tu mises sur le '+n+'.');return;}}
     const rouletteType=[['rouge','red'],['noir','black'],['pair','even'],['impair','odd'],['bas','low'],['haut','high']].find(([word])=>text.includes('mise sur le '+word)||text==='parie '+word);if(rouletteType){if(click('[data-roulette-type="'+rouletteType[1]+'"]')){say('Pari '+rouletteType[0]+' sélectionné.');return;}}
+    const ucChoice=text.match(/^(rouge|noir|plus haut|plus bas|interieur|exterieur|pique|coeur|carreau|trefle)$/);
+    if(ucChoice){const map={'pique':'♠','coeur':'♥','carreau':'♦','trefle':'♣'};const val=map[ucChoice[1]]||ucChoice[1].replace(/^./,c=>c.toUpperCase());const b=[...document.querySelectorAll('[data-uc-choice]')].find(x=>normal(x.dataset.ucChoice)===normal(val));if(b){b.click();say('Choix validé.');return;}}
     const actions=[
-      [/(rouge|noir|plus haut|plus bas|interieur|extérieur|exterieur|♠|♥|♦|♣)/,'[data-uc-choice]','Choix enregistré.'],
       [/(continue la pyramide|carte suivante|passe a la pyramide)/,'[data-uc="pyramid-next"]','La pyramide continue.'],
       [/(lance le de|lance le dé|avance)/,'[data-uc="roll-road"]','Le dé roule.'],
       [/(lance les deux des|bataille de corona)/,'[data-uc="corona-roll"]','Dernière épreuve.'],
