@@ -104,7 +104,7 @@
     const actions=[
       [/(lance les rouleaux|fais tourner|lance la machine|spin)/,'[data-cx="slot-spin"]','Rouleaux lancés.'],
       [/(lance les des|lancer les des|roule les des)/,'[data-cx="dice-roll"]','Les dés sont lancés.'],
-      [/(installe la table|demarre la partie|lance la partie)/,'[data-cx="dice-start"],[data-cx="high-start"]','La table est prête.'],
+      [/(installe la table|prepare la table de des)/,'[data-cx="dice-start"]','La table de dés est installée.'],
       [/(tourne la roulette|lance la roulette)/,'[data-roulette-spin]','La bille est lancée.'],
       [/(joueur suivant|a toi|suivant)/,'[data-cx="dice-next"],[data-cx="custom-next"],[data-bj="next"]','Au suivant.'],
       [/(tirer une epreuve|nouvelle epreuve|donne moi un defi|pioche un defi)/,'[data-cx="custom-draw"]','Nouvelle épreuve. À toi de jouer.'],
