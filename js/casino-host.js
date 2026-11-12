@@ -41,7 +41,7 @@ import { Bus } from './core.js';
       '<div class="chs-dialogue"><span class="chs-dialogue-label">SOPHIE · '+(TTS.status().active==='elevenlabs'?'ELEVENLABS':'VOIX')+'</span><p data-host-speech>« '+esc(lastSpeech||'Le Lord vous souhaite une mauvaise soirée. Installez-vous.')+' »</p><div class="chs-dialogue-meta"><span data-host-state>En attente de la table</span><span data-host-provider>Voix : '+esc(TTS.status().mode)+'</span></div></div></div>'+
       '<div class="chs-side"><div class="chs-tabs"><button data-host-tab="dealer" class="active">La salle</button><button data-host-tab="dossier">Dossier noir</button><button data-host-tab="missions">Missions</button></div>'+
       '<div class="chs-content" data-host-content></div></div>';
-    const content=$('#casino-content',root);if(content)root.insertBefore(el,content);else root.append(el);stage=el;renderTab();
+    const content=$('#casino-content',root);const windowEl=$('.casino-window',root)||root;if(content?.parentElement)content.parentElement.insertBefore(el,content);else windowEl.append(el);stage=el;renderTab();
   }
   function renderTab(){
     if(!stage)return;stage.querySelectorAll('[data-host-tab]').forEach(b=>b.classList.toggle('active',b.dataset.hostTab===activeTab));
