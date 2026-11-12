@@ -18,7 +18,7 @@
   };
   const say = text => window.PO_CASINO?.say(text);
   const playTone = (freq=440, duration=.12, type='triangle', volume=.15) => {
-    if (!audioPrefs.fx || !audio) return;
+    if (!audioPrefs.fx || audioPrefs.muted || !audio) return;
     try {
       const o=audio.createOscillator(), g=audio.createGain();
       o.type=type; o.frequency.value=freq; g.gain.setValueAtTime(Math.max(.001,volume*audioPrefs.fxVolume),audio.currentTime);
@@ -156,17 +156,21 @@
   const rank=n=>({11:'Valet',12:'Dame',13:'Roi',14:'As'}[n]||String(n));
   function renderHighGame(){
     const root=$('#cx-high-game');if(!root)return;
-    root.innerHTML='<div class="cx-high-cards">'+extraState.names.map((p,i)=>'<article><small>'+esc(p)+'</small><div class="cx-card '+(extraState.revealed?'':'back')+' '+(['♥','♦'].includes(extraState.cards[i].s)?'red':'')+'">'+(extraState.revealed?'<b>'+rank(extraState.cards[i].n)+'</b><span>'+extraState.cards[i].s+'</span>':'♠')+'</div></article>').join('')+'</div><p class="cx-result">'+(extraState.revealed?'Cartes révélées. Le meilleur rang remporte le pot.':'Distribution des cartes…')+'</p>';
+    const max=Math.max(...(extraState.cards||[]).map(c=>c.n)),winners=(extraState.cards||[]).map((c,i)=>c.n===max?i:-1).filter(i=>i>=0);
+    root.innerHTML='<div class="cx-high-cards">'+extraState.names.map((p,i)=>'<article><small>'+esc(p)+'</small><div class="cx-card '+(extraState.revealed?'':'back')+' '+(['♥','♦'].includes(extraState.cards[i].s)?'red':'')+'">'+(extraState.revealed?'<b>'+rank(extraState.cards[i].n)+'</b><span>'+extraState.cards[i].s+'</span>':'♠')+'</div></article>').join('')+'</div><p class="cx-result">'+(extraState.revealed?'🏆 '+winners.map(i=>esc(extraState.names[i])).join(', ')+' remporte(nt) la manche !':'Distribution des cartes…')+'</p>';
   }
-  function renderCreator(){
-    $('#casino-content').innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">ATELIER · MODE CRÉATION</span><h1>Fabrique <em>ta propre table</em></h1><p>Crée un jeu local, définis ses règles et retrouve-le dans ta ludothèque. Pas besoin de modifier le code.</p></div><div class="cx-creator-layout"><form id="cx-create-form" class="cx-panel"><label>Nom du jeu<input name="title" maxlength="42" placeholder="Ex. Le dernier survivant" required></label><label>Type de partie<select name="type"><option value="challenge">Défis / gages</option><option value="quiz">Quiz / questions</option><option value="dice">Dés / hasard</option></select></label><label>Joueurs minimum<select name="min"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label><label>Joueurs maximum<select name="max"><option>2</option><option>3</option><option selected>6</option><option>8</option></select></label><label>Contenu du jeu<textarea name="items" rows="7" placeholder="Une question ou un défi par ligne. Pour un quiz : question | réponse.&#10;Exemple : Cite 3 circuits de F1 | Monaco, Monza, Spa" required></textarea></label><label>Points pour une réussite<input name="points" type="number" min="1" max="20" value="1"></label><div class="cx-form-actions"><button class="casino-gold-btn" type="submit">Enregistrer le jeu</button><button class="casino-action" type="button" data-cx="custom-list">Voir ma ludothèque</button></div></form><aside class="cx-creator-preview"><span>APERÇU</span><div class="cx-preview-card"><div class="game-symbol">♛</div><h3>Ton jeu, tes règles.</h3><p>Les joueurs se relaient sur le même écran. Les scores sont enregistrés pendant la partie.</p><small>SAUVEGARDE LOCALE</small></div><p class="casino-fineprint">Les jeux personnalisés sont stockés dans ce navigateur. Exporte-les en JSON pour les transférer.</p></aside></div></section>';
+  function renderCreator(existing=null){
+    const g=existing||{title:'',type:'challenge',min:2,max:6,items:[],points:1};
+    $('#casino-content').innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">ATELIER · MODE CRÉATION</span><h1>Fabrique <em>ta propre table</em></h1><p>Crée un jeu local, définis ses règles et retrouve-le dans ta ludothèque. Pas besoin de modifier le code.</p></div><div class="cx-creator-layout"><form id="cx-create-form" class="cx-panel"><input type="hidden" name="editingId" value="'+esc(existing?.id||'')+'"><label>Nom du jeu<input name="title" maxlength="42" value="'+esc(g.title)+'" placeholder="Ex. Le dernier survivant" required></label><label>Type de partie<select name="type"><option value="challenge" '+(g.type==='challenge'?'selected':'')+'>Défis / gages</option><option value="quiz" '+(g.type==='quiz'?'selected':'')+'>Quiz / questions</option><option value="dice" '+(g.type==='dice'?'selected':'')+'>Dés / hasard</option></select></label><label>Joueurs minimum<select name="min">'+[1,2,3,4].map(n=>'<option '+(g.min===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Joueurs maximum<select name="max">'+[2,3,6,8].map(n=>'<option '+(g.max===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Contenu du jeu<textarea name="items" rows="7" placeholder="Une question ou un défi par ligne. Pour un quiz : question | réponse." required>'+esc(g.items.join('\n'))+'</textarea></label><label>Points pour une réussite<input name="points" type="number" min="1" max="20" value="'+g.points+'"></label><div class="cx-form-actions"><button class="casino-gold-btn" type="submit">'+(existing?'Enregistrer les modifications':'Enregistrer le jeu')+'</button><button class="casino-action" type="button" data-cx="custom-list">Voir ma ludothèque</button></div></form><aside class="cx-creator-preview"><span>APERÇU</span><div class="cx-preview-card"><div class="game-symbol">♛</div><h3>Ton jeu, tes règles.</h3><p>Les joueurs se relaient sur le même écran. Les scores sont enregistrés pendant la partie.</p><small>SAUVEGARDE LOCALE</small></div><p class="casino-fineprint">Les jeux personnalisés sont stockés dans ce navigateur. Exporte-les en JSON pour les transférer.</p></aside></div></section>';
   }
   function saveCustom(form){
     const data=new FormData(form),title=String(data.get('title')||'').trim(),items=String(data.get('items')||'').split('\n').map(x=>x.trim()).filter(Boolean);
     const min=Number(data.get('min')),max=Number(data.get('max'));
     if(!title||items.length<1||max<min){say('Il manque un nom, un contenu ou la configuration des joueurs.');return;}
-    const game={id:'cg-'+Date.now(),title,type:String(data.get('type')),min,max,items,points:Math.max(1,Math.min(20,Number(data.get('points')||1))),createdAt:new Date().toISOString()};
-    customGames.unshift(game);persistCustom();say('Ton jeu '+title+' est enregistré. Il est disponible dans ta ludothèque.');renderCustomList();
+    const editingId=String(data.get('editingId')||'');
+    const game={id:editingId||'cg-'+Date.now(),title,type:String(data.get('type')),min,max,items,points:Math.max(1,Math.min(20,Number(data.get('points')||1))),createdAt:new Date().toISOString()};
+    if(editingId){const i=customGames.findIndex(g=>g.id===editingId);if(i>=0)customGames[i]=game;else customGames.unshift(game);}else customGames.unshift(game);
+    persistCustom();say('Ton jeu '+title+' est enregistré. Il est disponible dans ta ludothèque.');renderCustomList();
   }
   function persistCustom(){try{localStorage.setItem(CUSTOM_KEY,JSON.stringify(customGames));}catch{say('Stockage local saturé : impossible de sauvegarder ce jeu.');}}
   function renderCustomList(){
@@ -232,6 +236,8 @@
       return;
     }
     if(b.dataset.cxPlay){playCustom(b.dataset.cxPlay);return;}
+    if(b.dataset.cxEdit){const g=customGames.find(x=>x.id===b.dataset.cxEdit);if(g)renderCreator(g);return;}
+    if(b.dataset.cxDuplicate){const g=customGames.find(x=>x.id===b.dataset.cxDuplicate);if(g){customGames.unshift({...g,id:'cg-'+Date.now(),title:g.title+' (copie)',createdAt:new Date().toISOString()});persistCustom();renderCustomList();say('Copie créée : '+g.title+'.');}return;}
     if(b.dataset.cxExport){exportCustom(b.dataset.cxExport);return;}
     if(b.dataset.cxDelete){if(confirm('Supprimer ce jeu de la ludothèque ?')){customGames=customGames.filter(g=>g.id!==b.dataset.cxDelete);persistCustom();renderCustomList();}return;}
   }
