@@ -32,3 +32,12 @@
 #po-casino .ccp-last strong{color:#eee4d2;font-size:11px;font-weight:500;letter-spacing:0}
 #po-casino[data-control-mode=voice] #casino-content button:not([data-casino-tab]):not([data-casino-extra]){opacity:.68}
 @media(max-width:760px){#po-casino .casino-control-panel{padding:15px}#po-casino .ccp-top{display:block}#po-casino .ccp-live{display:inline-block;margin-top:10px}#po-casino .ccp-modes{grid-template-columns:1fr}#po-casino .ccp-voice{align-items:flex-start;flex-direction:column}#po-casino .ccp-command-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#po-casino .ccp-last{align-items:flex-start;flex-direction:column;gap:4px}}
+
+/* Mode vocal : les actions de jeu passent par la voix ; navigation conservée. */
+#po-casino[data-control-mode=voice] #casino-content button:not([data-casino-tab]):not([data-casino-extra]):not([data-cx=home]){pointer-events:none;opacity:.34;filter:grayscale(.5)}
+#po-casino[data-control-mode=voice] #casino-content input,#po-casino[data-control-mode=voice] #casino-content select,#po-casino[data-control-mode=voice] #casino-content textarea{pointer-events:none;opacity:.5}
+#po-casino .cx-creator-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#po-casino .cx-timer{display:inline-flex;align-items:center;justify-content:center;margin:12px auto;padding:9px 18px;border:1px solid rgba(214,176,94,.4);border-radius:30px;color:#e7c878;font-weight:800;font-variant-numeric:tabular-nums}
+#po-casino .cx-custom-card{gap:10px}
+#po-casino .cx-custom-card>div{min-width:240px;flex:1}
+@media(max-width:760px){#po-casino .cx-creator-grid{grid-template-columns:1fr}}
