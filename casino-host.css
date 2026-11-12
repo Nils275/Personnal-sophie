@@ -24,3 +24,10 @@
 @keyframes chsCardLeft{0%,100%{transform:translate(0,8px) rotate(-17deg)}50%{transform:translate(-10px,-5px) rotate(-24deg)}}
 @keyframes chsCardRight{0%,100%{transform:translate(0,8px) rotate(15deg)}50%{transform:translate(10px,-7px) rotate(22deg)}}
 @keyframes chsDealerSpeak{from{transform:translateY(0) scale(1)}to{transform:translateY(-4px) scale(1.035)}}
+
+.chs-conversation{display:grid;gap:6px;margin-top:9px;max-height:125px;overflow:auto;padding:2px 3px;scrollbar-width:thin;scrollbar-color:#806a3e transparent}
+.chs-conversation>div{display:grid;gap:3px;max-width:92%;padding:7px 9px;border-radius:8px;background:#ffffff08;border:1px solid #ffffff10}
+.chs-conversation>div.sophie{justify-self:start;border-left:2px solid #c7a35d}
+.chs-conversation>div.player{justify-self:end;border-right:2px solid #66a98c;text-align:right;background:#1b3329}
+.chs-conversation small{font-size:7px;letter-spacing:.13em;color:#c5a45f}
+.chs-conversation span{font-size:9px;line-height:1.45;color:#e2e6dc;overflow-wrap:anywhere}
