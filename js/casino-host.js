@@ -29,7 +29,8 @@ import { Bus } from './core.js';
     {id:'m2',title:'Le numéro fantôme',brief:'La bille doit tomber sur le numéro 17. Pas de négociation.',goal:'roulette',reward:70,rep:3,success:'Le 17. Le Lord te doit un regard presque respectueux.'},
     {id:'m3',title:'Le bus de minuit',brief:'Atteins la case 56 dans le jeu du Colonel.',goal:'colonel',reward:100,rep:4,success:'Tu as traversé la route. Le Colonel connaît ton nom.'},
     {id:'m4',title:'La salle des machines',brief:'Déclenche trois tours de machine à sous.',goal:'slots',reward:45,rep:1,success:'Trois tours, zéro dignité perdue. Enfin presque.'},
-    {id:'m5',title:'Le cercle privé',brief:'Invite au moins trois joueurs et termine une partie de dés.',goal:'dice',reward:65,rep:2,success:'Le cercle privé t’ouvre une porte.'}
+    {id:'m5',title:'Le cercle privé',brief:'Invite au moins trois joueurs et termine une partie de dés.',goal:'dice',reward:65,rep:2,success:'Le cercle privé t’ouvre une porte.'},
+    {id:'m6',title:'Le coffre 13',brief:'Le Lord a ouvert une mallette scellée. Gagne une manche de blackjack pour prouver que tu sais garder un secret.',goal:'blackjack',reward:140,rep:5,success:'Le coffre 13 est à toi. Le Lord ne confie jamais deux fois la même clé.'}
   ];
   function avatar(state='idle'){return SophieAvatar({size:154,state,caption:false,button:false});}
   function inject(){
@@ -130,7 +131,7 @@ import { Bus } from './core.js';
     if(id==='badge'){say('Le badge te donne accès au salon privé. Il est déjà actif.');return;}
     if(id==='glasses'){say('Les lunettes du Lord te donnent accès au dialogue VIP. Tu as du style. Un peu inquiétant.');return;}
     const lines={
-      'prop-pistol':'Accessoire de cinéma équipé. Bonus de bluff narratif activé pour la prochaine mission de poker menteur.',
+      'prop-pistol':'Accessoire de cinéma équipé. Bonus de +1 réputation à ta prochaine mission réussie.',
       'foam-axe':'Hache en mousse prête. Une relance de dé sera disponible sur le parcours du Colonel.',
       'smoke-prop':'Fumée de scène déclenchée. Sophie lance une transition dramatique et masque le prochain indice de scénario.',
       'x9':'Mode Chaos activé. Les événements et les commentaires de Sophie deviennent imprévisibles.',
@@ -138,6 +139,8 @@ import { Bus } from './core.js';
       'case':'La mallette est ouverte. Un contrat secret vient d’être ajouté au dossier.',
       'radio':'La radio capte un message : « Le Lord ne fait jamais de cadeau. Vérifie toujours la dernière carte. »'
     };
+    if(id==='prop-pistol'){profile.nextMissionRepBonus=1;save();renderTab();say(lines[id]);return;}
+    if(id==='case'){profile.secretUnlocked=true;}
     if(consumables.includes(id)){profile.inventory=profile.inventory.filter(x=>x!==id);profile.activeEffects=profile.activeEffects||[];profile.activeEffects.push(id);save();renderTab();document.dispatchEvent(new CustomEvent('po:casino-item-use',{detail:{id}}));say(lines[id]||'Objet activé.');return;}
     say(lines[id]||'Objet équipé.');
   }
@@ -146,11 +149,11 @@ import { Bus } from './core.js';
     profile.credits-=item.price;profile.inventory.push(id);if(id==='glasses')profile.rep+=2;save();renderTab();say(item.name+' ajouté à ton inventaire. Le Lord vient de faire une affaire. Enfin, surtout lui.');
   }
   function newMission(){
-    const available=missions.filter(m=>m.id!==profile.lastMission);const m=available[Math.floor(Math.random()*available.length)]||missions[0];profile.currentMission=m.id;profile.lastMission=m.id;profile.missions++;save();renderTab();say('Contrat du Lord : '+m.title+'. '+m.brief+' Récompense : '+m.reward+' crédits fictifs.');
+    const available=missions.filter(m=>m.id!==profile.lastMission&&(m.id!=='m6'||profile.secretUnlocked));const m=available[Math.floor(Math.random()*available.length)]||missions[0];profile.currentMission=m.id;profile.lastMission=m.id;profile.missions++;save();renderTab();say('Contrat du Lord : '+m.title+'. '+m.brief+' Récompense : '+m.reward+' crédits fictifs.');
   }
   function completeMission(){
     const m=missions.find(x=>x.id===profile.currentMission);if(!m)return;
-    profile.credits+=m.reward;profile.rep+=m.rep;profile.missionsDone++;profile.currentMission=null;save();renderTab();say(m.success+' Tu gagnes '+m.reward+' crédits et '+m.rep+' réputation.');
+    const bonus=profile.nextMissionRepBonus||0;profile.credits+=m.reward;profile.rep+=m.rep+bonus;profile.nextMissionRepBonus=0;if(m.id==='m6')profile.secretUnlocked=false;profile.missionsDone++;profile.currentMission=null;save();renderTab();say(m.success+' Tu gagnes '+m.reward+' crédits et '+(m.rep+bonus)+' réputation.');
   }
   function listen(){
     const b=$('[data-voice-start]');if(b)b.click();else say('Active le micro dans le panneau de commande vocale.');
