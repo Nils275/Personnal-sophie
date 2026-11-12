@@ -77,7 +77,7 @@ import { Bus } from './core.js';
   function onSpeak(text){
     if(!stage)return;lastSpeech=String(text);const p=$('[data-host-speech]',stage);if(p)p.textContent='« '+lastSpeech+' »';
     const provider=TTS.status();const v=$('[data-host-provider]',stage);if(v)v.textContent='Voix : '+provider.active+' · '+provider.mode;
-    setAvatar('speaking');clearTimeout(speakingTimer);speakingTimer=setTimeout(()=>setAvatar('idle'),Math.min(9000,Math.max(1800,lastSpeech.length*42)));
+    const voiceEnabled=$('#casino-voice',root)?.checked!==false;if(voiceEnabled)document.dispatchEvent(new CustomEvent('po:casino-speaking',{detail:{active:true}}));setAvatar(voiceEnabled?'speaking':'idle');clearTimeout(speakingTimer);speakingTimer=setTimeout(()=>{setAvatar('idle');if(voiceEnabled)document.dispatchEvent(new CustomEvent('po:casino-speaking',{detail:{active:false}}));},Math.min(12000,Math.max(2200,lastSpeech.length*62)));
   }
   function currentPlayer(){return $('.casino-turn-info strong')?.textContent||$('.uc-player-strip .active')?.textContent?.split(' · ')[0]||'';}
   function click(sel){const b=$(sel);if(b&&!b.disabled){b.click();return true;}return false;}
