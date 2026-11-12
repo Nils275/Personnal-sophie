@@ -95,14 +95,30 @@
   function renderRoad(msg=''){
     game.phase='road';const p=current(),c=$('#casino-content'),pos=p.position;
     const milestones={1:'Départ',8:'Bus',15:'Accident',22:'Autoroute',29:'Péage',36:'Tentes',43:'Camp',50:'Corona',56:'Colonel'};const cells=Array.from({length:56},(_,i)=>{const n=i+1,player=game.players.filter(x=>x.position===n).map(x=>x.name).join(', '),milestone=milestones[n];return '<div class="uc-road-cell '+(n===pos?'current':'')+' '+(milestone?'milestone':'')+' '+(n%7===0?'event':'')+'" title="'+(milestone||('Case '+n))+'"><small>'+n+'</small><b>'+(n===56?'♛':milestone?'✦':'·')+'</b>'+(milestone?'<em>'+milestone+'</em>':'')+(player?'<i>'+esc(player)+'</i>':'')+'</div>';}).join('');
-    c.innerHTML=header('03–06 / 07','La route du Colonel')+'<div class="uc-road-info"><div><span>JOUEUR ACTIF</span><b>'+esc(p.name)+'</b></div><div><span>POSITION</span><b>'+pos+'/56</b></div><div><span>RÉPUTATION</span><b>'+p.penalties+' pt(s)</b></div></div><div class="uc-road-board">'+cells+'</div><div class="uc-panel"><p class="uc-feedback">'+esc(msg||'Lance le dé et découvre ce que la route te réserve.')+'</p><div class="uc-dice-display" id="uc-die">⚄</div><button class="casino-gold-btn" data-uc="roll-road">Lancer le dé</button><p class="uc-note">Cases spéciales tous les 7 emplacements. Arrivée au 56 : Le Colonel.</p></div><div class="uc-player-strip">'+game.players.map(x=>'<span>'+esc(x.name)+' · case '+x.position+'</span>').join('')+'</div>';
+    c.innerHTML=header('03–06 / 07','La route du Colonel')+'<div class="uc-road-info"><div><span>JOUEUR ACTIF</span><b>'+esc(p.name)+'</b></div><div><span>POSITION</span><b>'+pos+'/56</b></div><div><span>RÉPUTATION</span><b>'+p.penalties+' pt(s)</b></div></div><div class="uc-road-board">'+cells+'</div><div class="uc-panel"><p class="uc-feedback">'+esc(msg||'Lance le dé et découvre ce que la route te réserve.')+'</p><div class="uc-dice-display" id="uc-die">⚄</div><button class="casino-gold-btn" data-uc="roll-road">'+(game.lastRoadRoll?'Relancer le dé':'Lancer le dé')+'</button>'+(game.lastRoadRoll?'<button class="casino-action" data-uc="keep-road">Garder ce résultat</button>':'')+'<p class="uc-note">Cases spéciales tous les 7 emplacements. Arrivée au 56 : Le Colonel.</p></div><div class="uc-player-strip">'+game.players.map(x=>'<span>'+esc(x.name)+' · case '+x.position+'</span>').join('')+'</div>';
+  }
+  function nextRoadPlayer(p){
+    if(p.position>=56){renderCorona(p.name+' atteint la dernière case. La Bataille de Corona commence.');say(p.name+', tu es arrivé. Dernière épreuve : la Bataille de Corona.');return;}
+    const idx=game.players.indexOf(p);let next=(idx+1)%game.players.length,loops=0;while(game.players[next].position>=56&&loops++<game.players.length)next=(next+1)%game.players.length;game.turn=next;renderRoad();say('Au tour de '+game.players[next].name+'. Le Lord observe.');
+  }
+  function keepRoad(){
+    if(!game?.lastRoadRoll)return;const p=current();game.lastRoadRoll=null;game.axeReroll=false;nextRoadPlayer(p);
   }
   function rollRoad(){
-    const p=current(),roll=1+Math.floor(Math.random()*6);p.position=Math.min(56,p.position+roll);let msg=p.name+' lance '+roll+' et arrive case '+p.position+'.';
-    const ev=p.position%7===0?pick(events):null;if(ev){msg+=' '+ev[0]+' — '+ev[1];p.penalties=Math.max(0,p.penalties+(ev[2]<0?1:ev[2]));p.position=Math.max(0,Math.min(56,p.position+ev[2]));}
+    const p=current(),saved=game.lastRoadRoll;
+    const oldPosition=saved?saved.oldPosition:p.position,oldPenalties=saved?saved.oldPenalties:p.penalties,oldShield=saved?saved.oldShield:game.phantomShield;
+    if(saved){p.position=oldPosition;p.penalties=oldPenalties;game.phantomShield=oldShield;}
+    const roll=1+Math.floor(Math.random()*6);p.position=Math.min(56,p.position+roll);let msg=p.name+' lance '+roll+' et arrive case '+p.position+'.';
+    let ev=p.position%7===0?pick(events):null;
+    if(ev){
+      if(ev[2]<0&&game.phantomShield){game.phantomShield=false;msg+=' Le bouclier Phantom absorbe la pénalité.';}
+      else {let delta=ev[2];if(game.chaos&&Math.random()<.35){delta=-delta;msg+=' Le mode Chaos inverse l’événement !';}msg+=' '+ev[0]+' — '+ev[1];p.penalties=Math.max(0,p.penalties+(delta<0?1:delta));p.position=Math.max(0,Math.min(56,p.position+delta));}
+    }
     const die=$('#uc-die');if(die)die.textContent=['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1];
-    if(p.position>=56){renderCorona(msg+' Tu atteins le dernier défi.');say(msg+' La Bataille de Corona commence.');return;}
-    const idx=game.players.indexOf(p);let next=(idx+1)%game.players.length;let loops=0;while(game.players[next].position>=56&&loops++<game.players.length)next=(next+1)%game.players.length;game.turn=next;renderRoad(msg);say(msg+(game.banter?' '+pick(taunts):''));
+    if(game.axeReroll&&!saved){game.lastRoadRoll={oldPosition,oldPenalties,oldShield};renderRoad(msg+' La hache en mousse te donne une relance : tu gardes ou tu relances ?');say(msg+' Tu as une relance grâce à ton accessoire de cinéma. Tu gardes ce résultat ou tu relances ?');return;}
+    if(saved){game.lastRoadRoll=null;game.axeReroll=false;}
+    nextRoadPlayer(p);
+    if(msg)say(msg);
   }
   function renderCorona(msg=''){
     game.phase='corona';const p=current();$('#casino-content').innerHTML=header('07 / 07','La Bataille de Corona')+'<div class="uc-corona"><div class="uc-corona-banner">CORONA · ÉPREUVE FINALE</div><h2>Un dernier face-à-face.</h2><p>'+esc(msg||'Chaque joueur lance deux dés. Le meilleur total obtient le titre de Colonel.')+'</p><div class="uc-player-strip">'+game.players.map((x,i)=>'<span>'+esc(x.name)+' · '+(x.finalRoll||'en attente')+'</span>').join('')+'</div><button class="casino-gold-btn" data-uc="corona-roll">Lancer les deux dés</button><div id="uc-corona-result"></div></div>';
@@ -125,10 +141,20 @@
     if(b.dataset.ucDiscard!==undefined){discard(Number(b.dataset.ucDiscard));return;}
     const a=b.dataset.uc;
     if(a==='setup')setup();if(a==='lord')setTab('lord');if(a==='back')setTab('colonel');
-    if(a==='pyramid-next')pyramidNext();if(a==='roll-road')rollRoad();if(a==='corona-roll')coronaRoll();if(a==='finish')finish();
+    if(a==='pyramid-next')pyramidNext();if(a==='roll-road')rollRoad();if(a==='keep-road')keepRoad();if(a==='corona-roll')coronaRoll();if(a==='finish')finish();
     if(a==='home')window.PO_CASINO?.open('lobby');
   }
   function mount(r){if(r.dataset.undergroundMounted)return;r.dataset.undergroundMounted='1';root=r;nav();r.addEventListener('click',click);r.addEventListener('submit',e=>{if(e.target.id==='uc-setup')start(e);});}
+  document.addEventListener('po:casino-item-use',e=>{
+    const id=e.detail?.id;if(!game)return;
+    if(id==='foam-axe'){game.axeReroll=true;say('La hache en mousse est prête. Ton prochain lancer de parcours pourra être relancé.');}
+    if(id==='phantom'){game.phantomShield=true;say('Le bouclier Phantom est actif. Il annulera la prochaine pénalité du parcours.');}
+    if(id==='x9'){game.chaos=true;say('Mode Chaos activé. Certains événements du parcours peuvent s’inverser.');}
+    if(id==='smoke-prop'){game.smokeCover=true;say('La fumée de scène masque le prochain indice. Le croupier ne voit plus rien.');}
+    if(id==='case'){game.secretContract=true;say('La mallette contient un contrat secret. Le Lord te surveille désormais de plus près.');}
+    if(id==='radio'){say('Message intercepté : « Le bus ne s’arrête jamais deux fois au même endroit. »');}
+    if(game.phase==='road')renderRoad();
+  });
   const obs=new MutationObserver(()=>{const r=$('#po-casino');if(r&&!r.dataset.undergroundMounted)mount(r);});
   obs.observe(document.body,{childList:true,subtree:true});if($('#po-casino'))mount($('#po-casino'));
   document.addEventListener('click',e=>{if(e.target.closest('[data-casino-open]'))setTimeout(()=>{const r=$('#po-casino');if(r&&!r.dataset.undergroundMounted)mount(r);},0);});
