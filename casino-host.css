@@ -14,3 +14,13 @@
 @keyframes chsPulse{50%{opacity:.35;box-shadow:0 0 2px #ed4c40}}
 @media(max-width:850px){.chs-stage{grid-template-columns:1fr}.chs-scene{min-height:245px}.chs-content{max-height:300px}}
 @media(max-width:480px){.chs-stage{padding:7px;gap:7px}.chs-dialogue p{font-size:12px}.chs-tabs button{font-size:8px;padding:9px 3px}.chs-item{grid-template-columns:25px 1fr}.chs-item strong{grid-column:2}.chs-item button{grid-column:2}}
+
+/* Sophie est visuellement présente à la table : distribution cinématique */
+.chs-dealer:before,.chs-dealer:after{content:"A ♠";position:absolute;top:22px;left:calc(50% - 92px);width:43px;height:62px;border:1px solid #e7d9b8;border-radius:6px;background:linear-gradient(145deg,#fff9e9,#d9cfb9);color:#17251d;font:700 13px Georgia;display:grid;place-items:center;box-shadow:0 9px 18px #0008;transform:rotate(-17deg);animation:chsCardLeft 4.8s ease-in-out infinite;z-index:1}
+.chs-dealer:after{content:"K ♥";left:calc(50% + 49px);color:#a52c39;transform:rotate(15deg);animation:chsCardRight 5.2s ease-in-out infinite}
+.chs-dealer .sophie-avatar.state-speaking{animation:chsDealerSpeak .8s ease-in-out infinite alternate}
+.chs-dialogue{transition:border-color .25s,box-shadow .25s}
+.chs-dialogue:has(+ .x){border-color:#d9bd79}
+@keyframes chsCardLeft{0%,100%{transform:translate(0,8px) rotate(-17deg)}50%{transform:translate(-10px,-5px) rotate(-24deg)}}
+@keyframes chsCardRight{0%,100%{transform:translate(0,8px) rotate(15deg)}50%{transform:translate(10px,-7px) rotate(22deg)}}
+@keyframes chsDealerSpeak{from{transform:translateY(0) scale(1)}to{transform:translateY(-4px) scale(1.035)}}
