@@ -71,7 +71,7 @@
     say('Les quatre cartes sont jouées. La pyramide se dévoile. Vous pouvez vous débarrasser des cartes de même valeur.');
   }
   function renderPyramid(msg=''){
-    const c=$('#casino-content'),p=current(),card=game.pyramid.slice(0,game.row+1).at(-1);
+    const c=$('#casino-content'),p=current(),card=game.pyramid.slice(0,game.row+1).at(-1),masked=!!game.smokeCover&&!game.smokeUsed;if(masked)game.smokeUsed=true;
     const rows=[1,2,3,4,5];let n=0,html='';
     rows.forEach((len,r)=>{html+='<div class="uc-pyramid-row">'+Array.from({length:len},()=>{const i=n++,revealed=i<game.row+1,cc=game.pyramid[i];return '<div class="uc-mini-card '+(revealed?(red(cc.suit)?'red':''):'hidden')+'">'+(revealed?cc.rank+cc.suit:'♛')+'</div>';}).join('')+'</div>';});
     c.innerHTML=header('02 / 07','La pyramide des dettes')+'<div class="uc-panel"><div class="uc-pyramid">'+html+'</div><div class="uc-pyramid-current"><span>CARTE RÉVÉLÉE</span><b class="uc-mini-card '+(red(card.suit)?'red':'')+'">'+card.rank+card.suit+'</b><p>Tour de '+esc(p.name)+' · '+(game.row+1)+'/15</p></div><div class="uc-hand"><span>TA MAIN</span>'+p.hand.map((x,i)=>'<button class="uc-mini-card '+(red(x.suit)?'red':'')+'" data-uc-discard="'+i+'" title="Défausser cette carte">'+x.rank+x.suit+'</button>').join('')+(p.hand.length?'':'<em>Aucune carte en main</em>')+'</div><p class="uc-note">Défausse une carte de même valeur que la carte révélée. Si tu ne peux pas, pioche une carte de dette.</p><p class="uc-feedback">'+esc(msg)+'</p><button class="casino-gold-btn" data-uc="pyramid-next">Continuer la pyramide →</button></div><div class="uc-player-strip">'+game.players.map(x=>'<span>'+esc(x.name)+' · '+x.hand.length+' carte(s)</span>').join('')+'</div>';
