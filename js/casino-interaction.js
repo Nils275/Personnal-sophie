@@ -90,6 +90,8 @@
     if(text.includes('coupe le son')||text.includes('couper le son')||text.includes('silence musique')){if(!$('[data-audio-toggle]')?.textContent.includes('coupé'))click('[data-audio-toggle]');say('Le son est coupé. Enfin un peu de paix.');return;}
     if(text.includes('active le son')||text.includes('remets le son')||text==='musique'){if($('[data-audio-toggle]')?.textContent.includes('coupé'))click('[data-audio-toggle]');say('Ambiance rétablie. Le suspense reprend.');return;}
     const routes=[
+      [/(jeu du colonel|le colonel|route du colonel)/,'[data-underground="colonel"]','Le Colonel t’attend. Essaie de ne pas finir avec toute la pyramide sur le dos.'],
+      [/(le lord|rencontrer le lord|bureau du lord)/,'[data-underground="lord"]','Le Lord accepte de te recevoir. Tiens-toi correctement.'],
       [/(blackjack|vingt et un)/,'[data-casino-tab="blackjack"]','Blackjack, c’est parti. Essaie de ne pas offrir ton portefeuille à la banque.'],
       [/(roulette)/,'[data-casino-tab="roulette"]','La roulette est ouverte. Fais tes jeux.'],
       [/(machine a sous|machines a sous|jackpot|bandit manchot)/,'[data-casino-extra="slots"]','La machine à sous est prête. Fais tourner ces rouleaux.'],
@@ -102,6 +104,11 @@
     const roulettePick=text.match(/(?:numero|numéro)\s*(\d{1,2})/);if(roulettePick){const n=Number(roulettePick[1]);if(n>=0&&n<=36&&click('[data-roulette-pick="'+n+'"]')){say('Tu mises sur le '+n+'.');return;}}
     const rouletteType=[['rouge','red'],['noir','black'],['pair','even'],['impair','odd'],['bas','low'],['haut','high']].find(([word])=>text.includes('mise sur le '+word)||text==='parie '+word);if(rouletteType){if(click('[data-roulette-type="'+rouletteType[1]+'"]')){say('Pari '+rouletteType[0]+' sélectionné.');return;}}
     const actions=[
+      [/(rouge|noir|plus haut|plus bas|interieur|extérieur|exterieur|♠|♥|♦|♣)/,'[data-uc-choice]','Choix enregistré.'],
+      [/(continue la pyramide|carte suivante|passe a la pyramide)/,'[data-uc="pyramid-next"]','La pyramide continue.'],
+      [/(lance le de|lance le dé|avance)/,'[data-uc="roll-road"]','Le dé roule.'],
+      [/(lance les deux des|bataille de corona)/,'[data-uc="corona-roll"]','Dernière épreuve.'],
+      [/(titre de colonel|je suis le colonel)/,'[data-uc="finish"]','Le titre est attribué.'],
       [/(lance les rouleaux|fais tourner|lance la machine|spin)/,'[data-cx="slot-spin"]','Rouleaux lancés.'],
       [/(lance les des|lancer les des|roule les des)/,'[data-cx="dice-roll"]','Les dés sont lancés.'],
       [/(installe la table|prepare la table de des)/,'[data-cx="dice-start"]','La table de dés est installée.'],
@@ -121,6 +128,7 @@
       [/(retour au salon|accueil|quitter la table)/,'[data-cx="home"]','Retour au salon. La maison ne ferme jamais.']
     ];
     for(const [re,sel,response] of actions){if(re.test(text)){if(sel==='#casino-setup-form,#cx-custom-start-form'){const form=$('#casino-setup-form')||$('#cx-custom-start-form');if(form){form.requestSubmit();say(response);return;}}const selectors=sel.split(',');for(const s of selectors){if(click(s)){say(response);return;}}say('Je comprends la commande, mais cette action n’est pas disponible à cette étape.');return;}}
+    const ucChoice=text.match(/^(rouge|noir|plus haut|plus bas|interieur|exterieur|pique|coeur|carreau|trefle)$/);if(ucChoice){const map={'pique':'♠','coeur':'♥','carreau':'♦','trefle':'♣'};const val=map[ucChoice[1]]||ucChoice[1].replace(/^./,c=>c.toUpperCase());const b=[...document.querySelectorAll('[data-uc-choice]')].find(x=>normal(x.dataset.ucChoice)===normal(val));if(b){b.click();say('Choix validé.');return;}}
     const players=text.match(/\bjoueurs?\s+(.+)/);if(players){const names=players[1].split(/\s+et\s+|,| puis /).map(x=>x.trim()).filter(Boolean);const input=$('#cx-custom-players')||$('#cx-dice-players')||$('#cx-high-players');if(input){input.value=names.join(', ');say('J’ai inscrit '+names.join(' et ')+'.');return;}const count=$('#casino-player-count');if(count){count.value=String(Math.max(1,Math.min(6,names.length)));count.dispatchEvent(new Event('change',{bubbles:true}));names.forEach((name,i)=>{const field=$('[name="player'+(i+1)+'"]');if(field)field.value=name.slice(0,18);});say('J’ai préparé la table pour '+names.join(' et ')+'. Dis « lance la partie » quand tu es prêt.');return;}}
     say('Je n’ai pas compris « '+raw+' ». Dis « aide » pour entendre les commandes possibles.');
   }
