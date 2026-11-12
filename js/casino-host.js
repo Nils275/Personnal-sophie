@@ -39,7 +39,7 @@ import { Bus } from './core.js';
       '<div class="chs-scene"><div class="chs-scene-top"><span class="chs-live"><i></i> BLACK ROOM · EN DIRECT</span><span class="chs-room">TABLE PRIVÉE 01</span></div>'+
       '<div class="chs-dealer">'+avatar('idle')+'<div class="chs-dealer-glow"></div><div class="chs-nameplate"><b>SOPHIE</b><span>MAÎTRESSE DE CÉRÉMONIE</span></div></div>'+
       '<div class="chs-dialogue"><span class="chs-dialogue-label">SOPHIE · '+(TTS.status().active==='elevenlabs'?'ELEVENLABS':'VOIX')+'</span><p data-host-speech>« '+esc(lastSpeech||'Le Lord vous souhaite une mauvaise soirée. Installez-vous.')+' »</p><div class="chs-dialogue-meta"><span data-host-state>En attente de la table</span><span data-host-provider>Voix : '+esc(TTS.status().mode)+'</span></div></div></div>'+
-      '<div class="chs-side"><div class="chs-tabs"><button data-host-tab="dealer" class="active">La salle</button><button data-host-tab="dossier">Dossier noir</button><button data-host-tab="missions">Missions</button></div>'+
+      '<div class="chs-side"><div class="chs-tabs"><button data-host-tab="dealer" class="active">La salle</button><button data-host-tab="dossier">Dossier noir</button><button data-host-tab="missions">Missions</button><button data-host-tab="mecreants">Mécréants</button></div>'+
       '<div class="chs-content" data-host-content></div></div>';
     const content=$('#casino-content',root);const windowEl=$('.casino-window',root)||root;if(content?.parentElement)content.parentElement.insertBefore(el,content);else windowEl.append(el);stage=el;renderTab();
   }
@@ -55,6 +55,9 @@ import { Bus } from './core.js';
     }else if(activeTab==='dossier'){
       c.innerHTML='<div class="chs-kicker">ARCHIVES CONFIDENTIELLES</div><h3>Le marché du sous-sol</h3><p>Chaque objet possède une utilité dans le scénario. Tout est fictif : accessoires inertes, effets de jeu et substances inventées.</p>'+
       '<div class="chs-wallet"><span>TES CRÉDITS</span><b>'+profile.credits+' ◈</b></div><div class="chs-items">'+items.map(it=>'<article class="chs-item"><span class="chs-item-icon">'+it.icon+'</span><div><b>'+it.name+'</b><small>'+it.desc+'</small><em>'+it.effect+'</em></div><strong>'+(profile.inventory.includes(it.id)?'EN POCHE':it.price+' ◈')+'</strong>'+(profile.inventory.includes(it.id)?'<button data-host-use="'+it.id+'">'+(it.kind==='prop'||it.id==='glasses'||it.id==='badge'?'Équiper':'Utiliser')+'</button>':'<button data-host-buy="'+it.id+'" '+(profile.credits<it.price?'disabled':'')+'>Acheter</button>')+'</article>').join('')+'</div>';
+    }else if(activeTab==='mecreants'){
+      c.innerHTML='<div id="mc-game-root" class="mc-game-root"></div>';
+      document.dispatchEvent(new CustomEvent('po:mecreants-mount'));
     }else{
       const current=profile.currentMission;const m=missions.find(x=>x.id===current);
       c.innerHTML='<div class="chs-kicker">CONTRATS DU LORD</div><h3>Une soirée, des comptes à régler.</h3><p>Les missions donnent un objectif aux parties et récompensent les joueurs avec des crédits et de la réputation fictifs.</p>'+
