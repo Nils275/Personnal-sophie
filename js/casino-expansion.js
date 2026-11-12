@@ -186,8 +186,15 @@
   }
   function playCustom(id){
     const game=customGames.find(g=>g.id===id);if(!game)return;
-    const names=playerNames(prompt('Noms des joueurs séparés par des virgules :','Joueur 1, Joueur 2'),game.min,game.max);
-    if(names.length<game.min||names.length>game.max)return;
+    $('#casino-content').innerHTML='<section class="cx-page"><div class="cx-heading"><span class="casino-eyebrow">INSTALLATION DE LA TABLE</span><h1>'+esc(game.title)+'</h1><p>'+esc(game.description||'Configure les joueurs avant de commencer.')+'</p></div><form id="cx-custom-start-form" class="cx-panel"><label>Joueurs (séparés par des virgules)<input id="cx-custom-players" name="players" value="Joueur 1, Joueur 2" maxlength="180" required></label><small>Entre '+game.min+' à '+game.max+' noms. Les joueurs se relaient sur cet écran.</small><button class="casino-gold-btn" type="submit">Installer la partie</button></form><button class="casino-action" data-cx="custom-list">Retour à la ludothèque</button></section>';
+    $('#cx-custom-start-form').dataset.gameId=game.id;
+  }
+  function startCustomFromForm(form){
+    const game=customGames.find(g=>g.id===form.dataset.gameId);if(!game)return;
+    const raw=String(new FormData(form).get('players')||'').split(',').map(x=>x.trim()).filter(Boolean);
+    if(raw.length<game.min||raw.length>game.max){say('Il faut entre '+game.min+' et '+game.max+' joueurs.');return;}
+    if(new Set(raw.map(n=>n.toLowerCase())).size!==raw.length){say('Deux joueurs ont le même nom. Même dans ce casino, on évite les doublons.');return;}
+    const names=raw;
     extraState={kind:'custom',game,names,turn:0,scores:Object.fromEntries(names.map(n=>[n,0])),used:[],current:null,round:0,roundsPlayed:Object.fromEntries(names.map(n=>[n,0]))};
     renderCustomGame();say('La partie '+game.title+' commence. '+names[0]+', prépare-toi.');
   }
@@ -252,7 +259,7 @@
     if(b.dataset.cxExport){exportCustom(b.dataset.cxExport);return;}
     if(b.dataset.cxDelete){if(confirm('Supprimer ce jeu de la ludothèque ?')){customGames=customGames.filter(g=>g.id!==b.dataset.cxDelete);persistCustom();renderCustomList();}return;}
   }
-  function onExtraSubmit(e){if(e.target.id==='cx-create-form'){e.preventDefault();saveCustom(e.target);}}
+  function onExtraSubmit(e){if(e.target.id==='cx-create-form'){e.preventDefault();saveCustom(e.target);}if(e.target.id==='cx-custom-start-form'){e.preventDefault();startCustomFromForm(e.target);}}
   function onExtraChange(e){if(e.target.matches('[data-audio-music]')){audioPrefs.musicVolume=Number(e.target.value);startAudio();applyAudio();}if(e.target.id==='cx-import-file'&&e.target.files?.[0])importCustom(e.target.files[0]);}
   function mount(root){
     if(root.dataset.expansionMounted)return;root.dataset.expansionMounted='1';
