@@ -229,6 +229,10 @@ export const Camera = {
       this._lastLog = now;
       this.events.unshift(new Date(now));
       this.events.length = Math.min(this.events.length, LOG_MAX);
+      // Capture réelle du flux webcam : le module sécurité l'enregistre localement.
+      window.dispatchEvent(new CustomEvent('po:motion-detected', {
+        detail: { timestamp: now, label: this.label }
+      }));
       this.sync();
     }
   },
