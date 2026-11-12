@@ -109,6 +109,7 @@
       [/(joueur suivant|a toi|suivant)/,'[data-cx="dice-next"],[data-cx="custom-next"],[data-bj="next"]','Au suivant.'],
       [/(tirer une epreuve|nouvelle epreuve|donne moi un defi|pioche un defi)/,'[data-cx="custom-draw"]','Nouvelle épreuve. À toi de jouer.'],
       [/(reussite|defi reussi|j ai reussi)/,'[data-cx="custom-good"]','Je note la réussite. Ne prends pas trop la confiance.'],
+      [/(revele la reponse|quelle est la reponse|donne la reponse)/,'[data-cx="custom-answer"]','Je révèle la réponse.'],
       [/(je passe|passer|passe mon tour)/,'[data-cx="custom-pass"]','Tu passes. Petite nature.'],
       [/(distribue|distribuer|donne les cartes)/,'[data-cx="high-start"]','Je distribue les cartes.'],
       [/(revele le gagnant|resultat|fin de manche)/,'[data-cx="dice-settle"]','Je révèle le résultat.'],
