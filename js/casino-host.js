@@ -52,7 +52,7 @@ import { TTS } from './tts.js';
       '<div class="chs-transcript"><small>DERNIÈRE PHRASE ENTENDUE</small><b data-host-heard>'+esc(lastHeard||'Le micro attend ton signal…')+'</b></div>';
     }else if(activeTab==='dossier'){
       c.innerHTML='<div class="chs-kicker">ARCHIVES CONFIDENTIELLES</div><h3>Le marché du sous-sol</h3><p>Chaque objet possède une utilité dans le scénario. Tout est fictif : accessoires inertes, effets de jeu et substances inventées.</p>'+
-      '<div class="chs-wallet"><span>TES CRÉDITS</span><b>'+profile.credits+' ◈</b></div><div class="chs-items">'+items.map(it=>'<article class="chs-item"><span class="chs-item-icon">'+it.icon+'</span><div><b>'+it.name+'</b><small>'+it.desc+'</small><em>'+it.effect+'</em></div><strong>'+(profile.inventory.includes(it.id)?'EN POCHE':it.price+' ◈')+'</strong><button data-host-buy="'+it.id+'" '+(profile.inventory.includes(it.id)||profile.credits<it.price?'disabled':'')+'>'+(profile.inventory.includes(it.id)?'Acquis':'Acheter')+'</button></article>').join('')+'</div>';
+      '<div class="chs-wallet"><span>TES CRÉDITS</span><b>'+profile.credits+' ◈</b></div><div class="chs-items">'+items.map(it=>'<article class="chs-item"><span class="chs-item-icon">'+it.icon+'</span><div><b>'+it.name+'</b><small>'+it.desc+'</small><em>'+it.effect+'</em></div><strong>'+(profile.inventory.includes(it.id)?'EN POCHE':it.price+' ◈')+'</strong>'+(profile.inventory.includes(it.id)?'<button data-host-use="'+it.id+'">'+(it.kind==='prop'||it.id==='glasses'||it.id==='badge'?'Équiper':'Utiliser')+'</button>':'<button data-host-buy="'+it.id+'" '+(profile.credits<it.price?'disabled':'')+'>Acheter</button>')+'</article>').join('')+'</div>';
     }else{
       const current=profile.currentMission;const m=missions.find(x=>x.id===current);
       c.innerHTML='<div class="chs-kicker">CONTRATS DU LORD</div><h3>Une soirée, des comptes à régler.</h3><p>Les missions donnent un objectif aux parties et récompensent les joueurs avec des crédits et de la réputation fictifs.</p>'+
@@ -122,6 +122,23 @@ import { TTS } from './tts.js';
     if(action(lastHeard)){return true;}
     return false;
   }
+  function useItem(id){
+    const consumables=['foam-axe','smoke-prop','x9','phantom','case','radio'];
+    if(!profile.inventory.includes(id))return;
+    if(id==='badge'){say('Le badge te donne accès au salon privé. Il est déjà actif.');return;}
+    if(id==='glasses'){say('Les lunettes du Lord te donnent accès au dialogue VIP. Tu as du style. Un peu inquiétant.');return;}
+    const lines={
+      'prop-pistol':'Accessoire de cinéma équipé. Bonus de bluff narratif activé pour la prochaine mission de poker menteur.',
+      'foam-axe':'Hache en mousse prête. Une relance de dé sera disponible sur le parcours du Colonel.',
+      'smoke-prop':'Fumée de scène déclenchée. Sophie lance une transition dramatique et masque le prochain indice de scénario.',
+      'x9':'Mode Chaos activé. Les événements et les commentaires de Sophie deviennent imprévisibles.',
+      'phantom':'Sérum Phantom fictif activé. Une pénalité de scénario sera annulée.',
+      'case':'La mallette est ouverte. Un contrat secret vient d’être ajouté au dossier.',
+      'radio':'La radio capte un message : « Le Lord ne fait jamais de cadeau. Vérifie toujours la dernière carte. »'
+    };
+    if(consumables.includes(id)){profile.inventory=profile.inventory.filter(x=>x!==id);profile.activeEffects=profile.activeEffects||[];profile.activeEffects.push(id);save();renderTab();document.dispatchEvent(new CustomEvent('po:casino-item-use',{detail:{id}}));say(lines[id]||'Objet activé.');return;}
+    say(lines[id]||'Objet équipé.');
+  }
   function buy(id){
     const item=items.find(x=>x.id===id);if(!item||profile.inventory.includes(id)||profile.credits<item.price)return;
     profile.credits-=item.price;profile.inventory.push(id);if(id==='glasses')profile.rep+=2;save();renderTab();say(item.name+' ajouté à ton inventaire. Le Lord vient de faire une affaire. Enfin, surtout lui.');
@@ -141,10 +158,16 @@ import { TTS } from './tts.js';
     if(root.dataset.hostBound)return;root.dataset.hostBound='1';
     root.addEventListener('click',e=>{
       const tab=e.target.closest('[data-host-tab]');if(tab){activeTab=tab.dataset.hostTab;renderTab();return;}
-      const buyBtn=e.target.closest('[data-host-buy]');if(buyBtn){buy(buyBtn.dataset.hostBuy);return;}
+      const buyBtn=e.target.closest('[data-host-buy]');if(buyBtn){buy(buyBtn.dataset.hostBuy);return;}const useBtn=e.target.closest('[data-host-use]');if(useBtn){useItem(useBtn.dataset.hostUse);return;}
       const a=e.target.closest('[data-host-action]')?.dataset.hostAction;if(!a)return;
       if(a==='listen')listen();if(a==='repeat'&&lastSpeech)say(lastSpeech);if(a==='rules')handle('règles');if(a==='mission')newMission();if(a==='complete-mission')completeMission();
     });
+    const gameContent=$('#casino-content',root);
+    if(gameContent&&!gameContent.dataset.hostObserved){
+      gameContent.dataset.hostObserved='1';
+      const gameObserver=new MutationObserver(()=>{if(activeTab==='dealer'){const now=$('[data-host-content]',stage)?.querySelector('.chs-now b');if(now){const g=detectGame();now.textContent=g.label;const small=now.nextElementSibling;if(small)small.textContent=g.detail;}}});
+      gameObserver.observe(gameContent,{childList:true,subtree:true,characterData:true});
+    }
     const original=window.PO_CASINO?.say;
     if(original&&!window.PO_CASINO.__hostWrapped){window.PO_CASINO.say=(text)=>{const out=original(text);onSpeak(text);return out;};window.PO_CASINO.__hostWrapped=true;}
     root.addEventListener('click',e=>{if(e.target.closest('[data-casino-tab],[data-casino-extra],[data-underground],[data-cx],[data-bj],[data-roulette-spin]'))setTimeout(()=>{if(activeTab==='dealer')renderTab();},80);});
