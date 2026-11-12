@@ -150,7 +150,7 @@ import { Bus } from './core.js';
     profile.credits-=item.price;profile.inventory.push(id);if(id==='glasses')profile.rep+=2;save();renderTab();say(item.name+' ajouté à ton inventaire. Le Lord vient de faire une affaire. Enfin, surtout lui.');
   }
   function newMission(){
-    const available=missions.filter(m=>m.id!==profile.lastMission&&(m.id!=='m6'||profile.secretUnlocked));const m=available[Math.floor(Math.random()*available.length)]||missions[0];profile.currentMission=m.id;profile.lastMission=m.id;profile.missions++;save();renderTab();say('Contrat du Lord : '+m.title+'. '+m.brief+' Récompense : '+m.reward+' crédits fictifs.');
+    const available=missions.filter(m=>m.id!==profile.lastMission&&(m.id!=='m6'||profile.secretUnlocked));const m=(profile.secretUnlocked?missions.find(x=>x.id==='m6'):null)||available[Math.floor(Math.random()*available.length)]||missions[0];profile.currentMission=m.id;profile.lastMission=m.id;profile.missions++;save();renderTab();say('Contrat du Lord : '+m.title+'. '+m.brief+' Récompense : '+m.reward+' crédits fictifs.');
   }
   function completeMission(){
     const m=missions.find(x=>x.id===profile.currentMission);if(!m)return;
